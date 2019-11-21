@@ -541,8 +541,8 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
               {
                 CopyMemory(DeviceName,(const void*)lParam,6);
 
-                if(memcmp((const void*)DeviceName,"AZA",3))
-                    return 0;
+ ///               if(memcmp((const void*)DeviceName,"AZA",3))
+ ///                   return 0;
 
                  TabCtrl->Populate();
 
