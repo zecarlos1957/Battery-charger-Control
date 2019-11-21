@@ -540,7 +540,7 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
            case 0x6000805:   /// GetDeviceName
               {
                 CopyMemory(DeviceName,(const void*)lParam,6);
-lstrcpy(DeviceName,"AZA01");
+
                 if(memcmp((const void*)DeviceName,"AZA",3))
                     return 0;
 
