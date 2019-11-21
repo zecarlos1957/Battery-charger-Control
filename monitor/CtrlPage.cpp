@@ -172,7 +172,9 @@ void TabPage::Translate(char *data, AD_Value Func, char *t,DWORD ID_VAL)
      char str[32];
      short AD= *(short*)data;
 
-     double val = Func(AD);
+     double val;
+     if(Func)val = Func(AD);
+     else val=AD;
      sprintf(str,"%f",val);
      char *ptr = str;
      int digit;
@@ -190,7 +192,8 @@ void TabPage::Translate(char *data, AD_Value Func, char *t,DWORD ID_VAL)
          }
          sprintf(ptr," %s",t);
 
-     SendDlgItemMessage(hWnd, ID_VAL, WM_SETTEXT, 0,(LPARAM)str);
+     if(ID_VAL)
+         SendDlgItemMessage(hWnd, ID_VAL, WM_SETTEXT, 0,(LPARAM)str);
 
 }
 

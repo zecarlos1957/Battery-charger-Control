@@ -153,7 +153,7 @@ Win32Port::Win32Port( const string &port,
         saved_settings = settings; //Only needed because base class dumps
                                    //the saved settings in debug output
         //Init timeous to ensure our overlapped reads work
-        COMMTIMEOUTS timeouts = { 0x01, 0, 0, 300, 0 };
+        COMMTIMEOUTS timeouts = { 0x01,  0, 0, 0, 0 };//{ 0x01, 0, 0, 150, 0 };
         SetCommTimeouts( m_hPort, &timeouts );
         SetupComm( m_hPort, 500, 500 ); //set buffer sizes
         error_status = RS232_SUCCESS;     //clear current class error
@@ -163,11 +163,11 @@ Win32Port::Win32Port( const string &port,
 
 // Couldn't build the DCB. Usually a problem
 // with the communications specification string.
-          settings.Dtr = DTR_CONTROL_DISABLE;//ENABLE;                //Set these five values to their
-        settings.Rts = RTS_CONTROL_DISABLE;//ENABLE;                //default values, the Adjust()
+        settings.Dtr = DTR_CONTROL_DISABLE;  //Set these five values to their
+        settings.Rts = RTS_CONTROL_DISABLE;  //default values, the Adjust()
         settings.XonXoff = FALSE;            //function will modify them if
-        settings.RtsCts = FALSE;            //new values were passed in the args
-        settings.DtrDsr = FALSE;            //to the constructor
+        settings.RtsCts = FALSE;             //new values were passed in the args
+        settings.DtrDsr = FALSE;              //to the constructor
 
         settings.Adjust( baud_rate,
                          parity,
@@ -212,6 +212,8 @@ Win32Port::Win32Port( const string &port,
             m_hBreakRequestEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
             m_hInputThread = _beginthread( InputThread, 0, (void *) this );
             m_hOutputThread = _beginthread( OutputThread, 0, (void *) this );
+
+            return;
         }
     }
     //
@@ -222,6 +224,7 @@ Win32Port::Win32Port( const string &port,
     //
     else
         translate_last_error();
+    printf("Error opening port %s\n",port.c_str());
 }
 
 

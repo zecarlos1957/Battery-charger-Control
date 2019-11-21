@@ -1,0 +1,6 @@
+*.hex
+*.o
+*.cbp
+*.depend
+*.layout
+*.mcs

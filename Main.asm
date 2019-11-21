@@ -10,13 +10,11 @@
 ;        USART data manager
 ;        LCD2X16 display interface
 ;                                                                  *
-;  10 MHz Osc                                                         *
+;  4 MHz Osc                                                         *
 ;                                                                     *
 ;                                                                     *
 ;                                                                     *
-;                                                                     *
-; Tosc = (1/10 MHz)   = 0.0000001s = 100ns                            *
-; 1 instruction  = TOsc * 4 = 400ns                                   *
+;                                                                     *                           *
 ;
 ; Tosc = (1/4  MHz)   = 0.00000025s = 250ns                            *
 ; 1 instruction  = TOsc * 4 = 1us                                   *
@@ -39,7 +37,7 @@
 ;     4 - RA2-1-AN2         = I_out                                         *                                 *
 ;     5 - RA3-1-AN3         = NTC temperature                           *
 ;     6 - RA4-0             = RS display                                *
-;     7 - RA5-0             = RW display                                *
+;     7 - RA5-0-AN4                                           *
 ;    21 - RB0-0             = D4 display                                *
 ;    22 - RB1-0             = D5 display                                *
 ;    23 - RB2-0             = D6 display                                *
@@ -63,10 +61,10 @@
 ;                                                                     *
 ;         *******  Baterias de chumbo/Ã¡cido ******                    *
 ;                                                                     *
-;   Descarregada !           <      1.75        V_off                 *
-;   FlutuaÃ§Ã£o (normal)            2.15/2.20     V_float               *
-;   EqualizaÃ§Ã£o (recarga)         2.36/2.40     V_oct                 *
-;   SobretensÃ£o (sobrecarga  >      2.70                              *
+;   Descarregada !         <   1.75          V_off    -> 10,5v        *
+;   Flutuação (normal)         2.15/2.20     V_float  -> 12.9v/13.2v  *
+;   Equalização (recarga)      2.36/2.40     V_oct    -> 14.16/14.4v  *  
+;   Sobretensão (sobrecarga  > 2.70                   -> 16.2v        *
 ;                                                                     *
 ;   EqualizaÃ§Ã£o (recarga)    10% da capacidade   I_blk                *
 ;   FlutuaÃ§ao                 1%  "       "      I_tric               *
@@ -283,7 +281,7 @@ R_CNT   equ 0x0a
 
     #define	LCD_EN     PORTB,0x04	; Enable Output / "CLK"
     #define	LCD_RS     PORTA,0x04	; Register Select
-    #define	LCD_RW     PORTA,0x05	; Read/Write
+    ;#define	LCD_RW  Hard connection to ground  	; Read/Write
 
 
 ;***** LCD COMMANDS *****
@@ -779,10 +777,10 @@ cmp_oct
 chk_float:
 do_float:
    ; if (U_out > V_float) Req--
-   movfw V_float+1
+   movfw V_oct+1 ;V_float+1
    subwf U_out+1,W
    bnz cmp_float
-   movfw V_float
+   movfw V_oct ;V_float
    subwf U_out,W
 cmp_float
    btfss STATUS,C
@@ -790,7 +788,7 @@ cmp_float
    btfsc STATUS,Z
    goto Control_done
 
-   movlw 0xff
+   movlw 0xff        
    movwf Requer
    movwf Requer+1
    goto do_it
@@ -2091,7 +2089,7 @@ LCDcomd
 
 	; transmit data to LCD
 LCDdata	bsf	LCD_RS		; select data registers
-_LCD_wr	bcf	LCD_RW		; set write direction
+_LCD_wr	 
 	movwf	LCDtemp		; store command/data to send
 	; send hi-nibble
 	movfw	LCDtemp		; get data
@@ -2105,14 +2103,12 @@ _LCD_wr	bcf	LCD_RW		; set write direction
 	; reset LCD controls
 	clrLCDport		; reset LCD data lines
 	bcf	LCD_RS		; reset command/data register
-	bcf	LCD_RW		; reset to write direction
 	RETURN
 
 ;*****************************************************
 
 LCDinit
 	bcf	LCD_EN		; clear LCD clock line
-	bcf	LCD_RW		; set write direction
 	bcf	LCD_RS		; clear command/data line
 	clrLCDport		; reset LCD data lines
 	WAIT	4*LCDWAIT	; >= 4 ms @ 4 MHz

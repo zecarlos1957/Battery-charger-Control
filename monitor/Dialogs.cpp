@@ -42,7 +42,7 @@ void CMonitorPage::Populate()
 {
 
       char name[32];
-      char addr[]={6,0x60,0};
+      char addr[]={6,0x60,0x1,0x41,0};
 
       sprintf(name,"%c%c%c %d.%d.%d",app->GetDeviceName()[0],
                                   app->GetDeviceName()[1],
@@ -312,13 +312,13 @@ CBattPage::~CBattPage()
 
 void CBattPage::Populate()
 {
- /*    char str[4];
-    sprintf(str,"%s","--");
- //    SendMessage(hNSerial,WM_SETTEXT,0,(LPARAM)str);
- //   short Ap = app->ReadDeviceData( NULL, 0, 0x49, 1, "", NULL);
-     short ad = app->ReadDeviceData( GetDlgItem(hWnd,ID_UOUT), 0x62, 2, "Volts", ADtoVolts);
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_TEMP), 0x41, 1, "ÂºC", ADtoTemp);
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_AMP_H), 0x78, 2, "Amp/h", NULL);
+  //     char str[4];
+  //  sprintf(str,"%s","--");
+//      SendMessage(hNSerial,WM_SETTEXT,0,(LPARAM)str);
+ //     app->ReadDeviceData( hWnd,  0x49, 1, "", NULL);
+  //   short ad = app->ReadDeviceData( GetDlgItem(hWnd,ID_UOUT), 0x62, 2, "Volts", ADtoVolts);
+ /*    app->ReadDeviceData( GetDlgItem(hWnd,ID_TEMP), 0x41, 1, "ºC", ADtoTemp);
+     app->ReadDeviceData( GetDlgItem(hWnd,ID_AMP_H), 0x78, 4, "Amp/h", NULL);
 
      SendDlgItemMessage(hWnd,ID_AUTONOMI,WM_SETTEXT,0,(LPARAM)str);
 
@@ -331,7 +331,21 @@ void CBattPage::Populate()
         nSerial=1;
     else if(ad < 0x363)
         nSerial=2;
-*/
+ */
+      char data[]={1,0x41,2,0x62,4,0x78,0};
+      DataIdx=app->Monitor(this,data);
+}
+void CBattPage::Monitor(char *data)
+{
+ /*   printf("Monitor ");
+    for(int i=0;i<7;i++)
+       printf("0x%x ",*(data+DataIdx+i)&0xff);
+    printf("\n");
+   */
+      Translate(data+DataIdx,ADtoTemp,"ºC",ID_TEMP);
+      Translate(data+DataIdx+1,ADtoVolts,"V",ID_UOUT);
+      Translate(data+DataIdx+3,NULL,"A/h",ID_AMP_H);
+
 }
 
 LRESULT  CBattPage::OnPaint(WPARAM wParam,LPARAM lParam)
@@ -448,6 +462,11 @@ BOOL CALLBACK CBattPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
         case WM_PAINT:
              Obj->OnPaint(wParam,lParam);
              return FALSE;
+        case EV_DATA_REQUEST:
+           {
+             printf("CBattProc::Data_Request 0x%x\n",wParam);
+           }
+             return FALSE;
     }
 
     return FALSE;
@@ -560,10 +579,10 @@ CPortPage::~CPortPage()
 
 void CPortPage::Populate()
 {
- /*     Connection *Link=app->GetConnection();
+       Connection *Link=app->GetConnection();
       if(Link==NULL)return;
 
-      char *nm = Link->GetPortName();
+      const char *nm = Link->GetPortName();
 
       SendMessage(GetDlgItem(hWnd,ID_PORTNUM),WM_SETTEXT,0,(WPARAM)nm);
 
@@ -583,7 +602,7 @@ void CPortPage::Populate()
                       dcb.StopBits == ONE5STOPBITS?"1.5":"2");
 
   	SendMessage(GetDlgItem(hWnd,ID_SBIT), WM_SETTEXT, 0, (LPARAM)str);
-     sprintf(str,"%s",dcb.fParity == EVENPARITY?"Ãmpar":
+     sprintf(str,"%s",dcb.fParity == EVENPARITY?"Ímpar":
                       dcb.fParity == ODDPARITY? "Par":
                       dcb.fParity == MARKPARITY? "Marca":"Sem paridade");
   	SendMessage(GetDlgItem(hWnd,ID_PAR), WM_SETTEXT, 0, (LPARAM)str);
@@ -602,7 +621,7 @@ void CPortPage::Populate()
 
     sprintf(str,"%d ms",TimeOut.WriteTotalTimeoutConstant);
    	SendMessage(GetDlgItem(hWnd,ID_WCONST), WM_SETTEXT, 0, (LPARAM)str);
-*/
+
 }
 
 
@@ -669,24 +688,24 @@ CConfigPage::~CConfigPage()
 
 void CConfigPage::Populate()
 {
- /*   char str[64];
-    HDC dc=GetDC(hWnd);
+     char str[64];
+ /*   HDC dc=GetDC(hWnd);
     ModeVoltage=12;
 
      SetTextColor(dc,RGB(10,10,10));
-    sprintf(str,"Valores limite para o modo de %d Volts:",ModeVoltage);
+    sprintf(str,"Parametros para o modo de %d Volts:",ModeVoltage);
     TextOut(dc,20,20,str,lstrlen(str));
     //  SendDlgItemMessage(hWnd,ID_UMODE,WM_SETTEXT,0,(LPARAM)str);
-
-    short v_off = app->ReadDeviceData( GetDlgItem(hWnd,ID_VOFF),0x50, 2, "V", ADtoVolts);
-    short v_float  = app->ReadDeviceData( GetDlgItem(hWnd,ID_VFLOAT),0x52, 2, "V",ADtoVolts );
-    short v_oct = app->ReadDeviceData( GetDlgItem(hWnd,ID_VOCT),0x54, 2, "V", ADtoVolts);
-    short i_tric = app->ReadDeviceData( GetDlgItem(hWnd,ID_ITRIC),0x56, 2, "A", ADtoAmps);
-    short i_blk = app->ReadDeviceData( GetDlgItem(hWnd,ID_IBLK),0x58, 2, "A", ADtoAmps);
-    short i_oct = app->ReadDeviceData( GetDlgItem(hWnd,ID_IOCT),0x5a, 2, "A", ADtoAmps);
-
-    ReleaseDC(hWnd,dc);
-*/}
+*/
+  ///   app->ReadDeviceData( GetDlgItem(hWnd,ID_VOFF),0x50, 2, "V", ADtoVolts);
+   /*  app->ReadDeviceData( GetDlgItem(hWnd,ID_VFLOAT),0x52, 2, "V",ADtoVolts );
+     app->ReadDeviceData( GetDlgItem(hWnd,ID_VOCT),0x54, 2, "V", ADtoVolts);
+     app->ReadDeviceData( GetDlgItem(hWnd,ID_ITRIC),0x56, 2, "A", ADtoAmps);
+     app->ReadDeviceData( GetDlgItem(hWnd,ID_IBLK),0x58, 2, "A", ADtoAmps);
+     app->ReadDeviceData( GetDlgItem(hWnd,ID_IOCT),0x5a, 2, "A", ADtoAmps);
+*/
+//    ReleaseDC(hWnd,dc);
+ }
 
 
 BOOL CALLBACK CConfigPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

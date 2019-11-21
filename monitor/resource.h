@@ -109,7 +109,9 @@
 #define IDS_MSG1           1400
 
 
-#define EV_APP_INIT   WM_USER+1
-#define EV_DEVICE_MSG WM_USER+2
+#define EV_APP_INIT     WM_USER+1
+#define EV_DEVICE_MSG   WM_USER+2
+#define EV_DATA_REQUEST WM_USER+3
+
 
 #endif

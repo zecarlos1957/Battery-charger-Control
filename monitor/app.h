@@ -112,6 +112,7 @@ class TabPage
 protected:
       HWND hWnd;
       char name[32];
+      int DataIdx;
       void Translate(char *data, AD_Value Func, char *t, DWORD ID_VAL);
 public:
       TabPage(CTabCtrl *Ctrl,char *name,UINT id, DLGPROC Proc,TabPage *Obj);
@@ -128,24 +129,25 @@ class Connection: public Win32Port
 {
       HWND hWnd;
       bool OnLine;
-      char FrameData[32];
+      char FrameData[64];
+      char TXDataBuffer[64];
       char mode;
+      char PortName[8];
 public:
       Connection(HWND hwnd, std::string &port);
      ~Connection();
       DWORD ReadDevice(int len);
       char * BuildCmd(char cmd, char memTyp, char addr,char len);
       BOOL SendCommand(char *comd);
+      const char *GetPortName()const{return (const char*)PortName;}
       char *GetBuffer(){return FrameData;}
+      HANDLE GetPort(){return m_hPort;}
       BOOL SendData(int len, char *data);
       bool IsConnected();
-       void DsrNotify(bool status)
-      {
-           OnLine=status;
-          printf("%s\n", OnLine?"OnLine":"OffLine");
-      }
-      void RxNotify( int byte_count );
-      void TxNotify();
+      virtual void RxNotify( int byte_count );
+      virtual void TxNotify();
+      virtual void CtsNotify( bool status );
+      virtual void DsrNotify(bool status);
     virtual void ParityErrorNotify(){printf("ParityErrorNotify ");}
     virtual void FramingErrorNotify(){printf("FramingErrorNotify ");}
     virtual void HardwareOverrunErrorNotify(){printf("HardwareOverrunErrorNotify ");}
@@ -153,7 +155,14 @@ public:
     virtual void BreakDetectNotify(){printf("BreakDetectNotify ");}
 };
 
-
+typedef struct
+{
+    HWND hwnd;
+    char addr;
+    char sz;
+    char *t;
+    AD_Value Func;
+}TDataRequest;
 
 
 class App
@@ -163,8 +172,8 @@ class App
       HWND hwnd;
       void CreateMainMenu();
       char DeviceName[32];
-
-      char MonList[32];
+      TDataRequest DataRequest;
+      char MonList[64];
       int CmdLen;
       CTabCtrl *TabCtrl;
       BYTE AFlags;
@@ -182,24 +191,26 @@ public:
      ~App();
       LRESULT OnInit(WPARAM wParam, LPARAM lParam);
       LRESULT OnDevMsg(WPARAM w, LPARAM l);
+      LRESULT OnDataRequest(WPARAM wParam, LPARAM lParam);
       LRESULT OnCommand(WPARAM wParam,LPARAM lParam);
       LRESULT OnNotify(WPARAM wParam,LPARAM lParam);
       LRESULT OnDeviceChange(WPARAM wParam,LPARAM lParam);
       LRESULT OnPaint(WPARAM wParam,LPARAM lParam);
 
       int GetCmdLen(){return CmdLen;}
-      short ReadDeviceData(HWND u1, char addr, char sz, char *t, AD_Value Func=NULL);
-
-      char *GetDeviceName(){return DeviceName;}
-      DWORD Monitor( TabPage *page,char *addr);
       int GetListSz(){return ListSz;}
       short GetRefreshRate(){return DataRefreshRate;}
-      void SetRefreshRate(short r);
+      char *GetDeviceName(){return DeviceName;}
       TabPage *GetObject(int n){return MonPage[n];}
+      Connection *GetConnection(){return Link;}
+      char GetMonLen();
       HWND GetHandle(){return hwnd;}
+      short ReadDeviceData(HWND u1, char addr, char sz, char *t, AD_Value Func=NULL);
+      DWORD Monitor( TabPage *page,char *addr);
+      void SetRefreshRate(short r);
       void Refresh(char *data);
       void Process(short msg, char *data);
-      char GetMonLen();
+
 };
 
 
@@ -210,7 +221,7 @@ class CMonitorPage:public TabPage
 {
 
       HBITMAP hFrontBmp;
-      int DataIdx;
+
 public:
       CMonitorPage(CTabCtrl *Ctrl,char *name);
       ~CMonitorPage();
@@ -268,7 +279,6 @@ class CGraphPage:public TabPage
 
 class CBattPage:public TabPage
 {
- //   friend class Connection;
       HBITMAP hBattBmp;
       int nSerial;
       int nParalel;
@@ -278,6 +288,7 @@ public:
     ~CBattPage();
     virtual LRESULT OnPaint(WPARAM wParam,LPARAM lParam);
     virtual void Populate();
+    virtual void Monitor(char *data);
     static BOOL CALLBACK DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     void DrawStatus(HDC dc, int x, int y);
 };

@@ -52,8 +52,29 @@ HINSTANCE hInst;
 
 static const GUID GUID_DEVICEINTERFACE_LIST[] =
 {
+	/// GUID_DEVINTERFACE_USB_DEVICE
+//	{ 0xA5DCBF10, 0x6530, 0x11D2, { 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED } },
+
+	/// GUID_DEVINTERFACE_DISK
+//	{ 0x53f56307, 0xb6bf, 0x11d0, { 0x94, 0xf2, 0x00, 0xa0, 0xc9, 0x1e, 0xfb, 0x8b } },
+
+	/// GUID_DEVINTERFACE_HID,
+//	{ 0x4D1E55B2, 0xF16F, 0x11CF, { 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30 } },
+
+	/// GUID_NDIS_LAN_CLASS
+//	{ 0xad498944, 0x762f, 0x11d0, { 0x8d, 0xcb, 0x00, 0xc0, 0x4f, 0xc3, 0x35, 0x8c } }
+
 	// GUID_DEVINTERFACE_COMPORT
 	{ 0x86e0d1e0, 0x8089, 0x11d0, { 0x9c, 0xe4, 0x08, 0x00, 0x3e, 0x30, 0x1f, 0x73 } },
+
+	// GUID_DEVINTERFACE_SERENUM_BUS_ENUMERATOR
+//	{ 0x4D36E978, 0xE325, 0x11CE, { 0xBF, 0xC1, 0x08, 0x00, 0x2B, 0xE1, 0x03, 0x18 } },
+
+	// GUID_DEVINTERFACE_PARALLEL
+//	{ 0x97F76EF0, 0xF883, 0x11D0, { 0xAF, 0x1F, 0x00, 0x00, 0xF8, 0x00, 0x84, 0x5C } },
+
+	// GUID_DEVINTERFACE_PARCLASS
+//	{ 0x811FC6A5, 0xF728, 0x11D0, { 0xA5, 0x37, 0x00, 0x00, 0xF8, 0x75, 0x3E, 0xD1 } }
 };
 
 
@@ -76,6 +97,9 @@ BOOL CALLBACK MainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
              break;
          case EV_DEVICE_MSG:
              if(app)app->OnDevMsg(wParam,lParam);
+             break;
+         case EV_DATA_REQUEST:
+             if(app)app->OnDataRequest(wParam,lParam);
              break;
          case WM_DEVICECHANGE:
              if(app) app->OnDeviceChange(wParam,lParam);
@@ -122,23 +146,25 @@ App::App(HWND hwnd):hwnd(hwnd), CmdLen(0),nDuty(0),mIndex(0),ListSz(0),DataRefre
     CreateMainMenu();
     RegisterNotificationMsg();
 
-     string pname("COM3");
+     string pname("COM1");
       Link = new Connection(hwnd, pname);    /// Open last serial com port
 
 
 
      TabCtrl = new  CTabCtrl(hwnd);
      TabCtrl->Insert(new CMonitorPage(TabCtrl,"Monitor"));
-     TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
-     TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
-     TabCtrl->Insert(new CPortPage(TabCtrl, "ComunicaÃ§Ãµes"));
-     TabCtrl->Insert(new CConfigPage(TabCtrl, "ConfiguraÃ§Ã£o"));
+     //TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
+     //TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
+     //TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
+     //TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
+
+    int t1=100000;
+    while(t1--);
 
 
-    if(Link == NULL)return;
     if(Link->IsConnected())
             PostMessage(hwnd,EV_APP_INIT,0,0);
- //    else MessageBox(hwnd,"Dispositivo estÃ¡ OffLine", "Aviso",MB_ICONINFORMATION|MB_ICONASTERISK|MB_OK);
+     else MessageBox(hwnd,"Dispositivo está OffLine", "Aviso",MB_ICONINFORMATION|MB_ICONASTERISK|MB_OK);
 
 }
 
@@ -156,17 +182,22 @@ App::~App()
 short App::ReadDeviceData(HWND hwnd,  char addr, char sz, char *t, AD_Value Func)
 {
     short val=0;
-/*      char *data=BuildCmd(READ_MEM, RAM,  addr, sz);
-
+     int idx=0;
     if(Link->IsConnected() == FALSE)
     {
-        MessageBox(App::hwnd,"O equipamento estÃ¡ OffLine","Erro",MB_OK|MB_ICONEXCLAMATION);
+        MessageBox(App::hwnd,"O equipamento está OffLine","Erro",MB_OK|MB_ICONEXCLAMATION);
         return 0;
     }
 
+
+     DataRequest={hwnd, addr, sz, t, Func};
+
+      char *data=Link->BuildCmd(READ_MEM, RAM,  addr, sz);
+
      if(Link->SendCommand(data))
      {
-         int n = CmdLen;
+         DataRequest = {hwnd, addr, sz, t, Func};
+          int n = CmdLen;
           n-=Link->ReadDevice(n);
 
          char str[32];
@@ -210,17 +241,20 @@ short App::ReadDeviceData(HWND hwnd,  char addr, char sz, char *t, AD_Value Func
          MessageBox(0,msg,"Frame Error",MB_OK|MB_ICONEXCLAMATION);
 
      }
-  */    return val;
+
+       return val;
 }
 
 LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
 {
     DWORD  ThreadID;
-       /// Read AFLAGS
+       /// Read Device ID
                char *data=Link->BuildCmd(READ_MEM,EEPROM,0,6);
 
               Link->SendCommand(data);
-/*    char *frame=BuildCmd(READ_MEM,RAM,0x45,1);
+
+       /// Read AFLAGS
+     char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
      int n;
      if(Link->SendCommand(frame))
      {
@@ -230,9 +264,9 @@ LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
                 CheckMenuItem(GetMenu(hwnd), ID_DEVICE_CHARGE_ON,MF_CHECKED	);
             else if((AFlags&0x04) == 0)CheckMenuItem(GetMenu(hwnd), ID_DEVICE_CHARGE_ON,MF_UNCHECKED	);
      }
-
+/*
        ///   ReadLoopCnt
-       frame=BuildCmd(READ_MEM,RAM,0x4d,1);
+       frame = Link->BuildCmd(READ_MEM,RAM,0x4d,1);
 
      if(Link->SendCommand(frame))
      {
@@ -241,18 +275,18 @@ LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
      }
 
 
- */
 
-   ///       TabCtrl->Populate();
-/*
+
+           TabCtrl->Populate();
+
       /// Save MonList to device
-
-       frame=BuildCmd(WRITE_MEM,RAM,0xd9,mon+1); // Add
+       char monSz=4;
+       frame = Link->BuildCmd(WRITE_MEM,RAM,0xd9,monSz+1); // Add
           Link->SendCommand(frame);
           Link->SendData(mIndex,MonList);
         int len=0;
         printf("Frame 0x%x 0x%x 0x%x 0x%x 0x%x\ndata ",frame[0]&0xff,frame[1]&0xff,frame[2]&0xff,frame[3]&0xff,frame[4]&0xff);
-         char *data=&MonList[0];
+         data = &MonList[0];
         for(int i=0;i<MonList[0];i++)
         {
             len += *(data+1);
@@ -263,9 +297,7 @@ LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
         }
 
         CmdLen=  len;
-
 */
-
       return 0;
 }
 
@@ -287,7 +319,7 @@ LRESULT App::OnNotify(WPARAM wParam,LPARAM lParam)
 LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
 {
 
-/*	if ( DBT_DEVICEARRIVAL == wParam || DBT_DEVICEQUERYREMOVE == wParam || DBT_DEVICEREMOVECOMPLETE == wParam ) {
+ 	if ( DBT_DEVICEARRIVAL == wParam || DBT_DEVICEQUERYREMOVE == wParam || DBT_DEVICEREMOVECOMPLETE == wParam ) {
 		PDEV_BROADCAST_HDR pHdr = (PDEV_BROADCAST_HDR)lParam;
 		PDEV_BROADCAST_PORT pDevPort;
 		switch( pHdr->dbch_devicetype )
@@ -296,10 +328,15 @@ LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
 				pDevPort = (PDEV_BROADCAST_PORT)pHdr;
 				if ( DBT_DEVICEARRIVAL == wParam )
 				{
-				    if(Link) return 0;
+				    if(Link) delete Link;
 	//			    printf("BT_DEVICEARRIVAL DBT_DEVTYP_PORT\n");
-				    if(Connect(pDevPort->dbcp_name))
-                       PostMessage(hwnd,EV_APP_INIT,0,0);
+
+				    string pname(pDevPort->dbcp_name);
+
+                      Link = new Connection(hwnd, pname);
+
+                       if(Link->IsConnected())
+                         PostMessage(hwnd,EV_APP_INIT,0,0);
 
                 }
                 else if ( DBT_DEVICEQUERYREMOVE == wParam)
@@ -315,7 +352,7 @@ LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
 				break;
          }
     }
-  */  return TRUE;
+     return TRUE;
 }
 
 LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
@@ -324,7 +361,7 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
     {
            case ID_DEVICE_CHARGE_ON:
              {
-  /*             char *frame=BuildCmd(READ_MEM,RAM,0x45,1);
+               char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
                if(Link->SendCommand(frame))
                {
                   Link->ReadDevice(CmdLen);
@@ -334,7 +371,7 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
                char flags =(~AFlags)&0x04;       /// bit 2  0 -> CHARGE_OFF  1 -> CHARGE_ON
                 flags = flags |(AFlags&0xfb);
 
-               frame=BuildCmd(WRITE_MEM,RAM,0x45,1);
+               frame=Link->BuildCmd(WRITE_MEM,RAM,0x45,1);
                 Link->SendCommand(frame);
                 Link->SendData(1,&flags);
 
@@ -343,23 +380,23 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
                 {
                     char data;    /// clear CCPR1L
 
-                    frame=BuildCmd(WRITE_MEM,RAM,CCPR1L,1);
+                    frame=Link->BuildCmd(WRITE_MEM,RAM,CCPR1L,1);
                     Link->SendCommand(frame);
                     data=0;
                      Link->SendData(1,&data);
 
-                    frame=BuildCmd(READ_MEM,RAM,CCP1CON,1);
+                    frame=Link->BuildCmd(READ_MEM,RAM,CCP1CON,1);
                     Link->SendCommand(frame);     /// Read CCP1CON
                      Link->ReadDevice(CmdLen);
                      data = *Link->GetBuffer()&0x0f;
 
-                    frame=BuildCmd(WRITE_MEM,RAM,CCP1CON,1);
+                    frame=Link->BuildCmd(WRITE_MEM,RAM,CCP1CON,1);
                     Link->SendCommand(frame);     /// clear CCPiCON(HI nibble)
                      Link->SendData(1,&data);
 
                 }
 
-                frame=BuildCmd(READ_MEM,RAM,0x45,1);
+                frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
                 if(Link->SendCommand(frame))
                 {
                   Link->ReadDevice(CmdLen);
@@ -368,31 +405,28 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
                 if(AFlags&0x04)
                    CheckMenuItem(GetMenu(hwnd), ID_DEVICE_CHARGE_ON,MF_CHECKED	);
                 else if((AFlags&0x04) == 0)CheckMenuItem(GetMenu(hwnd), ID_DEVICE_CHARGE_ON,MF_UNCHECKED	);
-
-*/
             }
                 break;
           case ID_SLOW:
              {
-  /*             char data=1;
-               char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set SLOW_CHARGE
+                char data=1;
+               char *frame = Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set SLOW_CHARGE
                Link->SendCommand(frame);
                Link->SendData(1,&data);
-    */
              }
                break;
           case ID_FAST:
              {
-   /*              char data=2;
-               char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FAST_CHARGE
-               Link->SendCommand(frame);
-               Link->SendData(1,&data);
-     */        }
+                char data=2;
+                char *frame = Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FAST_CHARGE
+                Link->SendCommand(frame);
+                Link->SendData(1,&data);
+             }
                break;
           case ID_EQUALIZE:
              {
-     /*            char data=3;
-                   char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set EQUALIZE
+                   char data=3;
+                   char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set EQUALIZE
                     Link->SendCommand(frame);
                     Link->SendData(1,&data);
               //       AddDuty(50);
@@ -402,35 +436,33 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
                   ///            0x08 -> 120ma
                 ///
                     data=4;
-                    frame=BuildCmd(WRITE_MEM,RAM,0x5A,1); /// set I_oct (low byte)
+                    frame = Link->BuildCmd(WRITE_MEM,RAM,0x5A,1); /// set I_oct (low byte)
                     Link->SendCommand(frame);
                     Link->SendData(1,&data);
 
                   ///      Medir o tempo de resposta Amp/H
-
-*/
              }
                break;
           case ID_FLOTING:
              {
-  /*               char data=4;
-                  char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FLOTING
-                   printf("frame 0x%x 0x%x 0x%x 0x%x 0x%x\n",FrameData [0],FrameData [1],FrameData [2],FrameData [3],FrameData [4]);
+                  char data=4;
+                  char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FLOTING
+       //            printf("frame 0x%x 0x%x 0x%x 0x%x 0x%x\n",FrameData [0],FrameData [1],FrameData [2],FrameData [3],FrameData [4]);
                     Link->SendCommand(frame);
                      Link->SendData(1,&data);
-   */          }
+              }
                break;
           case ID_DEVICE_RESET:
              {
-    /*           char data=0;
-               char *frame=BuildCmd(WRITE_MEM,RAM,PCLATH,1);
+                char data=0;
+               char *frame = Link->BuildCmd(WRITE_MEM,RAM,PCLATH,1);
                Link->SendCommand(frame);
                Link->SendData(1,&data);
 
-               frame=BuildCmd(WRITE_MEM,RAM,PCL,1);
+               frame = Link->BuildCmd(WRITE_MEM,RAM,PCL,1);
                Link->SendCommand(frame);
                Link->SendData(1,&data);
-     */       }
+             }
                break;
           case ID_DEVICE_MEM:
              {
@@ -450,7 +482,55 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
     return 0;
 }
 
+LRESULT App::OnDataRequest(WPARAM wParam, LPARAM lParam)
+{
+   printf("App::OnDataRequest()\n");
+          int n = CmdLen;
+          n-=Link->ReadDevice(n);
+/*
+         char str[32];
+         if(sz==1) val = *((char*)Link->GetBuffer());
+        else if(sz==2) val = *((short*)Link->GetBuffer());
+        else if(sz==3) val = *((long*)Link->GetBuffer())&0x0fff;
+        else if(sz==4) val = *((long*)Link->GetBuffer());
+        else if(sz>0)  val = sz;
 
+         if(Func != NULL)
+         {
+            double v=Func(val);
+            sprintf(str,"%f",v);
+         }
+         else sprintf(str,"%d",val);
+         char *ptr=str;
+         int digit;
+         if(*t == 'A') digit=4; else digit=3;
+         while(*ptr)
+         {
+             if(*ptr=='.')
+             {
+                  ptr+=digit;
+                 *ptr = '\0';
+                  break;
+             }
+             ptr++;
+         }
+         sprintf(ptr," %s",t);
+        if(hwnd!=NULL)
+             if(SendMessage(hwnd,WM_SETTEXT,0,(LPARAM)str) != TRUE)
+             {
+                 DisplayLastError("ReadDeviceData",0);
+             }
+
+     }
+     else
+     {
+         char msg[255];
+         sprintf(msg,"ao tentar ler %d bytes no addr 0x%x",data[3],data[2]);
+         MessageBox(0,msg,"Frame Error",MB_OK|MB_ICONEXCLAMATION);
+
+     }
+     */
+}
 
 LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 {
@@ -458,20 +538,34 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
      switch(wParam)
      {
            case 0x6000805:   /// GetDeviceName
+              {
                 CopyMemory(DeviceName,(const void*)lParam,6);
+lstrcpy(DeviceName,"AZA01");
                 if(memcmp((const void*)DeviceName,"AZA",3))
-                   return 0;
-                TabCtrl->Populate();
+                    return 0;
+
+                 TabCtrl->Populate();
+
                 /// Write MonitorList to device
+                  printf("DataList: ");
+                 for(int n=0;n<=ListSz;n++)
+                    printf("0x%x ",MonList[n]);
+                printf("\n");
                 //...
-                Link->Dtr(1);
+                 char *frame=Link->BuildCmd( WRITE_MEM,RAM,0xd9,ListSz+1);
+                 Link->SendCommand(frame);
+                 Link->SendData(ListSz+1,MonList);
+
+                  Link->Dtr(1);
+              }
                 break;
            case  0xaa:        /// Monitor
                 Refresh(((char*)lParam+1));
                 break;
-           default:          /// Memory access dialog
+           default:          /// Request memory access
                 {
                     char str[128];
+                    char tmp[32];
                     str[0]='\0';
                     int n=wParam>>24;
         //             printf("msg 0x%x : ",wParam);
@@ -480,13 +574,26 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
                         char *ptr=(char*)lParam;
                         for(int i=0;i<n;i++)
                         {
-                            sprintf(str+strlen(str),"0x%.2x ",(*(ptr+i))&0xff);
+                            sprintf(str+i*2,"0x%.2x ",(*(ptr+i))&0xff);
   //                          printf("%s ",str);
                         }
-  //    printf("\n");
-                        HWND HwndDlg=GetActiveWindow();
-                        int i=SendDlgItemMessage(HwndDlg,IDC_LISTDATA,LB_ADDSTRING,0,(LPARAM)str);
-                        SendDlgItemMessage(HwndDlg,IDC_LISTDATA,LB_SETSEL,TRUE,(LPARAM)i);
+                       GetWindowText(DataRequest.hwnd,tmp,31);
+   //    printf("%s EV_DATA_REQUEST ",tmp);
+
+                        HWND Hwnd=GetActiveWindow();
+                        if(Hwnd != hwnd)  /// Request from Memory access dialog
+                        {
+                            int i;
+                            i=SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_GETCURSEL,0,0);
+                            SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_SETSEL,FALSE,i);
+                            i=SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_ADDSTRING,0,(LPARAM)str);
+                            SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_SETSEL,TRUE,(LPARAM)i);
+                        }
+                        else             /// Request from App::ReadDeviceData
+                        {
+                            PostMessage(DataRequest.hwnd,EV_DATA_REQUEST,wParam,lParam);
+                            printf("%s EV_DATA_REQUEST ",tmp);
+                        }
                     }
                }
                 break;
@@ -498,15 +605,22 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 
 DWORD App::Monitor(TabPage *page, char *listInfo)
 {
-     int i=0;
-     MonPage[mIndex]=page;
+     int i=GetMonLen();
+
+     MonPage[mIndex++]=page;
       while(*listInfo)
      {
+         if(ListSz == 63)
+         {
+             printf("MonList is full\n");
+             break;
+         }
+
          MonList[++ListSz] = *listInfo++;
-         i++;
+       //  i++;
      }
-     MonList[0]=++mIndex;
-      return ListSz-i;
+     MonList[0]=ListSz>>1;
+      return i;
 }
 
 void App::Refresh(char *data)
@@ -555,7 +669,7 @@ BOOL App::RegisterNotificationMsg()
          hDevNotify=RegisterDeviceNotification(hwnd,&NotificationFilter,DEVICE_NOTIFY_WINDOW_HANDLE);
          if(!hDevNotify)
          {
-             MessageBox(hwnd,"CanÂ´t register device notification:","Error",MB_OK|MB_ICONEXCLAMATION);
+             MessageBox(hwnd,"Can´t register device notification:","Error",MB_OK|MB_ICONEXCLAMATION);
              return FALSE;
          }
      }
@@ -570,22 +684,22 @@ void App::CreateMainMenu()
 
 			hSubMenu = CreatePopupMenu();
 			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_CHARGE_ON, _T("&Dispositivo On/Off"));
- //			AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
- 			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_MEM, _T("&Acesso Ã  memoria"));
- 	//		AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_GRAPHIC, _T("&GrÃ¡ficos"));
- 	//		AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+  			AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+ 			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_MEM, _T("&Acesso à memoria"));
+ 	 		AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_GRAPHIC, _T("&Gráficos"));
+ 	 		AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
 			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_RESET, _T("&Reset"));
 			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Dispositivo"));
 
             hSubMenu = CreatePopupMenu();
-			AppendMenu(hSubMenu, MF_STRING, ID_OPTION_SETUP, _T("&ConfiguraÃ§Ã£o"));
+			AppendMenu(hSubMenu, MF_STRING, ID_OPTION_SETUP, _T("&Configuração"));
   			AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
 			AppendMenu(hSubMenu, MF_STRING, ID_SLOW, _T("Carga &lenta"));
-			AppendMenu(hSubMenu, MF_STRING, ID_FAST, _T("Carga &rÃ¡pida"));
-			AppendMenu(hSubMenu, MF_STRING, ID_EQUALIZE, _T("&EqualizaÃ§Ã£o"));
-			AppendMenu(hSubMenu, MF_STRING, ID_FLOTING, _T("&FlutuaÃ§Ã£o"));
-			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&OpÃ§Ãµes"));
+			AppendMenu(hSubMenu, MF_STRING, ID_FAST, _T("Carga &rápida"));
+			AppendMenu(hSubMenu, MF_STRING, ID_EQUALIZE, _T("&Equalização"));
+			AppendMenu(hSubMenu, MF_STRING, ID_FLOTING, _T("&Flutuação"));
+			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Opções"));
 
             hSubMenu = CreatePopupMenu();
 			AppendMenu(hSubMenu, MF_STRING, ID_HELP_HLP, _T("&Ajuda"));
@@ -649,7 +763,7 @@ short VoltsToPWM(double Rms, short Uin)
 }
 VOID CALLBACK  OnMonitor( HWND hwnd, UINT uMsg,	 UINT idEvent, DWORD dwTime  )
 {
- /*    if(app->GetDuty())return;
+/*     if(app->GetDuty())return;
      for(int n=0;n<app->GetMon();n++)
          app->GetObject(n)->Monitor();
 */
@@ -787,10 +901,10 @@ BOOL CALLBACK ConfigProc(HWND hwnd , UINT msg, WPARAM wParam, LPARAM lParam)
                           break;
                      case ID_OK:
                         {
-          /*                  char data= SendDlgItemMessage(hwnd,(To_do&0xffff),CB_GETCURSEL,0,0)+1;
+   /*                          char data= SendDlgItemMessage(hwnd,(To_do&0xffff),CB_GETCURSEL,0,0)+1;
                             if((To_do&0xffff)==ID_LOOPCNT)
                             {
-                                char *frame = app->BuildCmd(WRITE_MEM,RAM,(To_do>>16),1);
+                                char *frame = Link->BuildCmd(WRITE_MEM,RAM,(To_do>>16),1);
                                 if(app->Link->SendCommand(frame))
                                 {
                                     Link->SendData(1,&data);
@@ -802,7 +916,7 @@ BOOL CALLBACK ConfigProc(HWND hwnd , UINT msg, WPARAM wParam, LPARAM lParam)
                             }
                             To_do=0;
                             SendMessage(hwnd,WM_CLOSE,0,0);
-            */            }
+        */                }
                           break;
                      case ID_CANCEL:
                           To_do=0;
@@ -946,7 +1060,6 @@ BOOL CALLBACK UserDataProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                           }
                           SendDlgItemMessage(HwndDlg,IDC_LISTDATA,LB_DELETESTRING,i,0);
                           SendDlgItemMessage(HwndDlg,IDC_LISTDATA,LB_ADDSTRING,0,(LPARAM)str);
-
                       }
                  }
                  else if(LOWORD(wParam)== IDC_BTNWRITE)
@@ -1038,14 +1151,16 @@ BOOL CALLBACK UserDataProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-Connection::Connection(HWND hwnd, std::string &port):Win32Port(port, CBR_9600, NOPARITY, 8, ONESTOPBIT, FALSE, FALSE),
-                                                     OnLine(FALSE),
-                                                     mode(0),
-                                                     hWnd(hwnd)
+Connection::Connection(HWND hwnd, std::string &port):
+	                   Win32Port(port, CBR_9600, NOPARITY, 8, ONESTOPBIT, TRUE, FALSE),
+                       OnLine(FALSE),
+                       mode(0),
+                       hWnd(hwnd)
 {
-  //  char buf[256];
-  // FormatDebugOutput(buf,4);
-  // printf(buf);
+    char buf[256];
+     lstrcpy(PortName,port.c_str());
+    FormatDebugOutput(buf,4);
+    printf(buf);
 }
 Connection::~Connection()
 {
@@ -1069,27 +1184,80 @@ BOOL Connection::SendCommand(char *comd)
 
 BOOL Connection::SendData(int len, char *data)
 {
-     if(write_buffer(data,len)!= RS232_SUCCESS)
-    {
-        printf("Write_Err\n");
-        return FALSE;
-    }
-    return TRUE;
+    CopyMemory(&FrameData[5],data,len);
+
+   return TRUE;
 }
 
 
+void Connection::DsrNotify(bool status)
+{
+      OnLine=status;
+      printf("%s\n", OnLine?"OnLine":"OffLine");
+}
+
+void Connection::CtsNotify( bool status )
+{
+       DWORD error;
+     /**
+           CTS Hi == disable  CTS low == Enable
+     */
+
+  //   if(*(DWORD*)FrameData==0xbd91405)
+  //          printf("Enable Monitor\n");// Dtr(1);
+
+
+     printf("%s\n",status==true?"CTS_CONTROL_DISABLE":"CTS_CONTROL_ENABLE");
+ //printf(" cmd 0x%x adr 0x%x len 0x%x :",FrameData[1],FrameData[2],len  );
+
+
+
+      if(status == false || (FrameData[1]&0x10) == 0) return;
+
+ /// if (CTS is disable(true) and cmd==WRITE_MEM(0x01)) send data now.
+
+      error=write_buffer(&FrameData[5],FrameData[3]);
+      if(error != RS232_SUCCESS)
+      {
+          DisplayLastError("WritePort");
+      }
+
+ //     printf(" Frame_Data 0x%x 0x%x 0x%x data:",FrameData[1]&0xff,FrameData[2]&0xff,FrameData[3]&0xff );
+      printf("Frame_Data: ");
+      for(int n=0;n<FrameData[3];n++)
+          printf("0x%x ", FrameData[5+n] );
+
+     printf("\n");
+
+}
+
+void Connection::TxNotify( )
+{
+      DWORD error;
+      if(!IsConnected() )
+      {
+         if( FrameData[0]!=0) printf("!!Device is OffLine\n");
+          return;
+      }
+     printf("Frame_Cmd 0x%x 0x%x 0x%x 0x%x \n",FrameData[0]&0xff, FrameData[1]&0xff, FrameData[2]&0xff, FrameData[3]&0xff  );
+
+
+}
+
 void Connection::RxNotify( int byte_count )
 {
-    if(byte_count>32)
+    if(byte_count>64)
     {
         printf("RX:byte_count == %d !!!\n",byte_count);
-       byte_count=32;
+       byte_count=64;
     }
- //     printf("RX %d: ",byte_count);
+
     char data;
     static int idx=0;
     unsigned char ChkSum=0;
     static DWORD CmdMsg=0;
+
+
 
     if(CmdMsg == 0)
     {
@@ -1104,25 +1272,32 @@ void Connection::RxNotify( int byte_count )
     {
         CmdMsg=((app->GetMonLen()+1)<<24)|0xaa;
     }
+
+    /** if is not a complete frame return */
     if(idx < (CmdMsg>>24)+1)return;
 
-   // printf("idx %d %d\n",idx, (CmdMsg>>24)  );
+    if(idx > (CmdMsg>>24)+1)idx=(CmdMsg>>24);
+
+    if((CmdMsg&0xff) != 0xaa)
+        printf("0x%x data ", CmdMsg) ;
 
     for(int i=0;i<idx-1;i++)
     {
         ChkSum += (FrameData[i]&0xff);
     }
     if(ChkSum != (FrameData[idx-1]&0xff))
-    {
         printf("CheckSum Error\n");
-     printf("len %d :",idx );
-         for(int i=0;i<idx;i++)
-        {
-            printf("0x%x ", (FrameData[i]&0xff));
-        }
-        printf("ChkSum 0x%x\n",ChkSum);
-   }
-    if((CmdMsg&0xff)==0xaa)CmdMsg=0xaa;
+
+    if((CmdMsg&0xff) != 0xaa)
+    {
+        for(int i=0;i<idx;i++)
+       {
+           printf("0x%x ", (FrameData[i]&0xff));
+       }
+       printf("\n");
+    }
+    if((CmdMsg&0xff)==0xaa)
+        CmdMsg=0xaa;
 
 /*
 
@@ -1140,16 +1315,6 @@ void Connection::RxNotify( int byte_count )
 
 
 
-void Connection::TxNotify( )
-{
-     DWORD event;
-     char len = FrameData[3]&0xff;
-     char *comd=&FrameData[0];
-      printf("Tx: 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-             comd[0]&0xff, comd[1]&0xff, comd[2]&0xff, comd[3]&0xff, comd[4]&0xff);
-
-
-}
 char *  Connection::BuildCmd(char cmd, char memTyp, char addr,char len)
 {
 
@@ -1171,6 +1336,6 @@ char *  Connection::BuildCmd(char cmd, char memTyp, char addr,char len)
 
 bool Connection::IsConnected()
 {
-   //   check_modem_status( false, MS_CTS_ON );
+   //    check_modem_status( false, MS_CTS_ON );
    return OnLine;
 }

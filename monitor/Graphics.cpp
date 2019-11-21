@@ -21,22 +21,22 @@ CGraphic::CGraphic(HWND hParent, char *nm, UINT id, RECT rect,COLORREF color):co
  //    y1=rect.top;
 
   //   printf("CGraphic::w %d h %d\n",w,h);
- /*   hwnd=CreateWindowEx(WS_EX_CLIENTEDGE , "GraphClass", "", WS_CHILD|WS_VISIBLE|WS_HSCROLL,
+     hwnd=CreateWindowEx(WS_EX_CLIENTEDGE , "GraphClass", "", WS_CHILD|WS_VISIBLE|WS_HSCROLL,
                         rect.left,rect.top,rect.right,rect.bottom,hParent,
                         (HMENU)id, hInst,  this);
 
    //   SendDlgItemMessage(hParent,id,WM_SETTEXT,0,(WPARAM)nm);
 
 
-   HWND hToolTip=CreateWindowEx(0, TOOLTIPS_CLASS,"", TTS_ALWAYSTIP|WS_VISIBLE,
+ /*  HWND hToolTip=CreateWindowEx(0, TOOLTIPS_CLASS,"", TTS_ALWAYSTIP|WS_VISIBLE,
                          0,0,0,0, hParent, (HMENU)NULL, hInst, NULL);
 
       if(!hToolTip)DisplayLastError("toolTip",0);
      SendMessage(hParent, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT	), (LPARAM)true);
-
+*/
     hDelPen=CreatePen(PS_SOLID, 0,  RGB(255,255,255));
     hPen=CreatePen(PS_SOLID, 0, color);
-
+/*
     TOOLINFO ti={0};
 
     ti.cbSize   = sizeof(ti);
@@ -45,13 +45,13 @@ CGraphic::CGraphic(HWND hParent, char *nm, UINT id, RECT rect,COLORREF color):co
     ti.lpszText = LPSTR_TEXTCALLBACK;
     ti.hwnd     = hParent;
     SendMessage(hToolTip,TTM_ADDTOOL,0,(LPARAM)&ti);
-*/
 
+*/
 }
 CGraphic::~CGraphic()
 {
- //    DeleteObject(hDelPen);
- //    DeleteObject(hPen);
+      DeleteObject(hDelPen);
+      DeleteObject(hPen);
 }
 void CGraphic::DrawScale( HDC dc, int y1)
 {
@@ -61,11 +61,11 @@ void CGraphic::DrawScale( HDC dc, int y1)
       int h= rect.bottom-rect.top-40;
      int y=y1+h+10;
 
-     char str[32];
-     int range=(short)(Func(max)-(short)Func(min)+1)*10;
+      char str[32];
+     int range=20;///(short)(Func(max)-(short)Func(min)+1)*10;
   //    int range=(max-min);
      int space = (h/range);
-     int scale = Func(min);
+     int scale = 1;//Func(min);
 
   ///   printf("%d %d %d %d mi %d mx %d\n", rect.left, rect.top, rect.right, rect.bottom, min, max);
  //  printf("%d \n",spc/10);
@@ -118,7 +118,7 @@ void CGraphic::DrawScale( HDC dc, int y1)
 
 
 
-      DrawTimeLine( dc, 30, y1+h+45, rect.right-rect.left);
+ //     DrawTimeLine( dc, 30, y1+h+45, rect.right-rect.left);
 //printf(" %d ",w);
      DeleteObject(SelectObject(dc,Old));
 
@@ -219,11 +219,19 @@ BOOL CALLBACK  GraphProc(HWND Hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
      {
          case WM_INITDIALOG:
               {
-                  RECT rect={20,20,200,100};
+                   RECT rect;
+                   GetClientRect(Hwnd,&rect);
                    Graphic=new CGraphic(Hwnd,"name",ID_GRAPH_U,rect,RGB(250,0,0));
               }
               return FALSE;
-
+         case WM_PAINT:
+            {
+              PAINTSTRUCT ps;
+              HDC hdc=BeginPaint(Hwnd,&ps);
+         //     Graphic->DrawScale(hdc,15);
+              EndPaint(Hwnd, &ps);
+              return FALSE;
+            }
   /*       case WM_MOUSEMOVE:
               SetFocus(Hwnd);
               return

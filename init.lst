@@ -1,0 +1,454 @@
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 
+                      00002 
+                      00003 ;***** COMPILATION MESSAGES & WARNINGS *****
+                      00004 
+                      00005         ERRORLEVEL -207         ; Found label after column 1.
+                      00006         ERRORLEVEL -302         ; Register in operand not in bank 0.
+                      00007 
+                      00008 
+                      00009 
+                      00010         #include "p16f873a.inc"
+                      00001         LIST
+                      00002 ; P16F873A.INC  Standard Header File, Version 1.00    Microchip Technology, Inc.
+                      00384         LIST
+                      00011 
+                      00012 
+                      00013 
+                      00014 
+  0000                00015    global SetupConfig
+                      00016 
+                      00017    CODE
+                      00018 
+                      00019 ;****************************************************
+                      00020  
+0000                  00021 SetupConfig
+                      00022     ;  config I/O Ports 
+0000   1683 1303      00023     banksel TRISA
+0002   300F           00024     movlw b'00001111'  
+                      00025           ; -------1'  AN0 input  U1 analog signal 
+                      00026           ; ------1-   AN1 input  U2 analog signal
+                      00027           ; -----1--   AN2 input  I1 analog signal
+                      00028           ; ----1---   AN3 input  temperature   analog signal
+                      00029           ; --00----   RA4/RA5 output RW/RS display
+0003   0085           00030     movwf TRISA
+                      00031     
+                      00032 
+0004   30E0           00033     movlw b'11100000'
+                      00034           ; 1-------   RB7 input button Up
+                      00035           ; -1------   RB6 input button Down
+                      00036           ; --1-----   RB5 input button Ok
+                      00037           ; ---0----   RB4 display Enable
+                      00038           ; ----0000   RB0-RB3 display data
+0005   0086           00039     movwf TRISB
+                      00040     
+                      00041 
+0006   30D2           00042     movlw b'11010010' 
+                      00043           ; xxxxxxx0   RC0   output alarm sirene                  *
+                      00044           ; xxxxxx1x   RC1   DTR   
+                      00045           ; xxxxx0xx   RC2   PWM 
+                      00046           ; xxxx0xxx   RC3   CTS
+                      00047           ; xxx1xxxx   RC4   RTS
+                      00048           ; xx0xxxxx   RC5   DSR 
+                      00049           ; xxxxxxxx   RC6   TX serial
+                      00050           ; xxxxxxxx   RC7   RX serial
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0007   0087           00051     movwf TRISC
+                      00052    
+                      00053   
+                      00054  
+                      00055   ; TRM0 config 
+0008   3007           00056    movlw b'00000111'       ; configure Timer0
+                      00057          ; 0-------       PORTB pull-up resistor enable 
+                      00058          ; --0-----       TMR0 source clock internal(TOCS = 0)
+                      00059          ; ----0---       prescaler assigned to Timer0 (PSA = 0)
+                      00060          ; -----111       prescale = 1:256 (PS = 111)
+0009   0081           00061    movwf OPTION_REG
+                      00062   
+                      00063 ; Setup AD Converter
+                      00064 ; ADCON0  b'11xxx001'
+                      00065 
+000A   3082           00066    movlw b'10000010' 
+                      00067          ; 1-------      right just = 10 bits result   (ADFM =1)
+                      00068          ; -0------      AD clock from internal RC Oscillator (ADCS2 = 0)
+                      00069          ; ----0010        AN0,1,2,3,4  Vdd Vref+, Vss Vref-
+000B   009F           00070    movwf ADCON1
+                      00071   
+                      00072 
+                      00073 ; set highest PWM value 
+                      00074  
+000C   30FF           00075    movlw 0xff   ;
+000D   0092           00076    movwf PR2    ; Set PWM period
+                      00077   
+                      00078 ;  Setup PWM module
+000E   1283 1303      00079   banksel CCP1CON
+0010   0817           00080    movf CCP1CON,w
+0011   39F0           00081    andlw 0xf0
+0012   380C           00082    iorlw 0x0c    
+0013   0097           00083    movwf CCP1CON
+                      00084       ; --xx----  2 LSB bits duty cicle
+                      00085       ; ----11xx  enable PWM mode
+                      00086  
+0014   0185           00087     clrf PORTA
+0015   0186           00088     clrf PORTB 
+0016   0187           00089     clrf PORTC
+                      00090 
+                      00091  
+                      00092 
+                      00093  ;setup TMR2 
+0017   3000           00094    movlw b'00000000' 
+                      00095        ;   -0000--- TMR2 output postscaler 1:1
+                      00096        ;   -----x-- TMR2 On/Off 
+                      00097        ;   ------01 clock prescaler 1:1
+0018   0092           00098    movwf T2CON
+0019   0195           00099     clrf CCPR1L
+001A   1512           00100    bsf T2CON,TMR2ON 
+                      00101 
+                      00102    
+001B   1683 1303      00103     banksel SPBRG
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+001D   3019           00104     movlw 0x19     ; 9600 bdps    (BRH=1)
+001E   0099           00105     movwf SPBRG
+001F   3024           00106     movlw b'00100100'
+                      00107       ;     -0------     8 bits transmit
+                      00108       ;     --1-----     transmite enable
+                      00109       ;     ---0----     Asynchronous mode
+                      00110       ;     -----1--     hi speed (BRGH)
+                      00111       ;     ------x-     TRMT
+                      00112       ;     -------0     Data9BitTransmit  
+0020   0098           00113     movwf TXSTA
+                      00114 
+0021   168C           00115     bsf PIE1,RCIE      ; Enable USART interrupt
+0022   1283 1303      00116     banksel RCSTA
+0024   3010           00117     movlw b'00010000'
+                      00118       ;     0-------  Serial port dissable
+                      00119       ;     -0------  8 bits reception
+                      00120       ;     ---1----  enable continuous receive
+                      00121       ;     ----0---  disable addr detection. 9 can be parity bit
+                      00122       ;     -----0--  framing error 
+                      00123       ;     ------0-  no overrun error
+                      00124       ;     -------0  Data9BitReceive
+0025   0098           00125     movwf RCSTA
+                      00126 
+0026   128C           00127     bcf PIR1,RCIF    ; Clear interrupt flag
+0027   170B           00128     bsf INTCON,PEIE  ; Enable Peripheral interrupt
+                      00129 
+                      00130   
+                      00131 ;   movlw BAUD_9600
+                      00132 ;   pagesel UART_Init
+                      00133 ;   call UART_Init
+                      00134 
+                      00135 
+                      00136  
+                      00137 
+0028   0008           00138    return
+                      00139 
+                      00140 
+                      00141 
+                      00142 
+                      00143 ;*************************************************************************
+                      00144  
+                      00145 
+                      00146     END
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  4
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADCS2                             00000006
+ADDEN                             00000003
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000003
+CHS1                              00000004
+CHS2                              00000005
+CIS                               00000003
+CKE                               00000006
+CKP                               00000004
+CM0                               00000000
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  5
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000009C
+CMIE                              00000006
+CMIF                              00000006
+CREN                              00000004
+CSRC                              00000007
+CVR0                              00000000
+CVR1                              00000001
+CVR2                              00000002
+CVR3                              00000003
+CVRCON                            0000009D
+CVREN                             00000007
+CVROE                             00000006
+CVRR                              00000005
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+D_A                               00000005
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GCEN                              00000007
+GIE                               00000007
+GO                                00000002
+GO_DONE                           00000002
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000002
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OERR                              00000001
+OPTION_REG                        00000081
+P                                 00000004
+PCFG0                             00000000
+PCFG1                             00000001
+PCFG2                             00000002
+PCFG3                             00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+R                                 00000002
+RBIE                              00000003
+RBIF                              00000000
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+READ_WRITE                        00000002
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+R_W                               00000002
+S                                 00000003
+SEN                               00000000
+SMP                               00000007
+SPBRG                             00000099
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+SSPEN                             00000005
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
+SSPSTAT                           00000094
+STATUS                            00000003
+SYNC                              00000004
+SetupConfig                       00000000
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISB                             00000086
+TRISC                             00000087
+TRMT                              00000001
+TX8_9                             00000006
+MPASM  5.37                          INIT.ASM   11-20-2019  12:17:17         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TX9                               00000006
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+W                                 00000000
+WCOL                              00000007
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_ALL                           00001FFF
+_CP_OFF                           00003FFF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         000037FF
+_HS_OSC                           00003FFE
+_LP_OSC                           00003FFC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC                           00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_WRT_1FOURTH                      00003BFF
+_WRT_256                          00003DFF
+_WRT_HALF                         000039FF
+_WRT_OFF                          00003FFF
+_XT_OSC                           00003FFD
+__16F873A                         00000001
+__DEBUG                           1
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     0 reported,     9 suppressed
+
+

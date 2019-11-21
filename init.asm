@@ -66,7 +66,7 @@ SetupConfig
    movlw b'10000010' 
          ; 1-------      right just = 10 bits result   (ADFM =1)
          ; -0------      AD clock from internal RC Oscillator (ADCS2 = 0)
-         ; ----0010    	   AN0,1,2,3, Vdd Vref+, Vss Vref-
+         ; ----0010    	   AN0,1,2,3,4  Vdd Vref+, Vss Vref-
    movwf ADCON1
   
 

@@ -14,7 +14,7 @@
 
 
 DLG_MAIN DIALOGEX 6, 5, 470, 290
-CAPTION "Control de carga"
+CAPTION "Control de carga V 0.0"
 FONT 8, "Tahoma"
 STYLE DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU|WS_VISIBLE
 
@@ -93,14 +93,14 @@ CAPTION "Grupo de Baterias"
 BEGIN
        GROUPBOX "Estado da carga", ID_STATIC,320,60, 100, 170, BS_GROUPBOX
 
-       GROUPBOX "ParÃ¢metros", ID_STATIC,20,110, 200, 120, BS_GROUPBOX
+       GROUPBOX "Parâmetros", ID_STATIC,20,110, 200, 120, BS_GROUPBOX
      LTEXT "U_out: ", ID_UOUT, 140, 130, 60, 12, WS_BORDER|SS_CENTER
       LTEXT "_o_", ID_RI, 140, 150, 60, 12, WS_BORDER|SS_CENTER
-      LTEXT "ÂºC", ID_AMP_H, 140,170, 60, 12, WS_BORDER|SS_CENTER
-      LTEXT "A/h", ID_TEMP, 140,190, 60, 12, WS_BORDER|SS_CENTER
+      LTEXT "A/h", ID_AMP_H, 140,170, 60, 12, WS_BORDER|SS_CENTER
+      LTEXT "ºC", ID_TEMP, 140,190, 60, 12, WS_BORDER|SS_CENTER
       LTEXT "Horas", ID_AUTONOMI, 140,210, 60, 12, WS_BORDER|SS_CENTER
-      LTEXT "TensÃ£o: ", ID_STATIC, 40, 130, 100, 12, SS_RIGHT
-      LTEXT "ResistÃªncia interna: ", ID_STATIC, 40, 150, 100, 12, SS_RIGHT
+      LTEXT "Tensão: ", ID_STATIC, 40, 130, 100, 12, SS_RIGHT
+      LTEXT "Resistência interna: ", ID_STATIC, 40, 150, 100, 12, SS_RIGHT
       LTEXT "Carga actual:", ID_STATIC, 40,170, 100, 12, SS_RIGHT
       LTEXT "Temperatura:", ID_STATIC, 40,190, 100, 12, SS_RIGHT
       LTEXT "Autonomia:", ID_STATIC, 40,210, 100, 12, SS_RIGHT
@@ -124,12 +124,12 @@ END
 
 
 DLG_COMPORT DIALOGEX 5, 18, 440, 220
-CAPTION "ComunicaÃ§Ãµes"
+CAPTION "Comunicações"
 FONT 8, "Tahoma"
 STYLE DS_CONTROL|WS_CHILD //|DS_MODALFRAME
 
 BEGIN
-       GROUPBOX "ConfiguraÃ§Ã£o", ID_STATIC,20,20, 200, 150, BS_GROUPBOX
+       GROUPBOX "Configuração", ID_STATIC,20,20, 200, 150, BS_GROUPBOX
       LTEXT "Porta ID:", ID_STATIC, 30, 44, 100, 15, SS_RIGHT
       LTEXT "Bits por segundo:", ID_STATIC, 30, 64, 100, 12, SS_RIGHT
       LTEXT "Bits de dados:", ID_STATIC, 30, 84, 100, 12, SS_RIGHT
@@ -162,13 +162,13 @@ END
 
 
 DLG_CONFIG DIALOGEX 5, 18, 440, 220
-CAPTION "CofiguraÃ§Ã£o"
+CAPTION "Cofiguração"
 FONT 8, "Tahoma"
 STYLE DS_CONTROL|WS_CHILD
 
 BEGIN
   //    LTEXT "", ID_UMODE, 220, 10, 22, 12, SS_CENTER
-      GROUPBOX "TensÃ£o", ID_STATIC,10,20, 200, 150, BS_GROUPBOX
+      GROUPBOX "Tensão", ID_STATIC,10,20, 200, 150, BS_GROUPBOX
       GROUPBOX "Intensidade", ID_STATIC,220,20, 200, 150, BS_GROUPBOX
       LTEXT "V_off:", ID_STATIC, 20, 40, 60, 12, SS_RIGHT
       LTEXT "V_float:", ID_STATIC, 20, 60, 60, 12, SS_RIGHT
@@ -186,7 +186,7 @@ BEGIN
 END
 
 CFG_OPTION_DLG DIALOGEX 100,100,300,120
-CAPTION "ConfiguraÃ§Ã£o"
+CAPTION "Configuração"
 //FONT 8, "Tahoma"
  //FONT 8,"MS Shell Dlg",0,0,0x1
  FONT 8, "MS Sans Serif", 0, 0, 0x1
@@ -198,12 +198,12 @@ BEGIN
 
      GROUPBOX "Read Loop Counter", ID_STATIC,10,10, 100, 100, BS_GROUPBOX
      COMBOBOX ID_LOOPCNT, 20, 30, 40, 55, CBS_DROPDOWNLIST | WS_TABSTOP|WS_VSCROLL
-     CTEXT "Numero de leituras para valor mÃ©dio de dados:", -1, 17, 60, 80, 20
+     CTEXT "Numero de leituras para valor médio de dados:", -1, 17, 60, 80, 20
      PUSHBUTTON "Set default", ID_DEFAULT, 20, 80, 50, 12
 
      GROUPBOX "Data refresh rate", ID_STATIC,120,10, 100, 100, BS_GROUPBOX
       COMBOBOX ID_REFRESH, 150, 30, 40, 55, CBS_DROPDOWNLIST | WS_TABSTOP|WS_VSCROLL
-     CTEXT "frequÃªncia de actualizaÃ§Ã£o dos dados", -1, 130, 60, 80, 20
+     CTEXT "frequência de actualização dos dados", -1, 130, 60, 80, 20
 
 END
 
@@ -220,14 +220,14 @@ END
 
 
 USERDATA_DLG DIALOGEX 100,100,210,200
-CAPTION "Acesso Ã  memÃ³ria "
+CAPTION "Acesso à memória "
 FONT 8, "Tahoma"
 STYLE DS_MODALFRAME   | WS_CAPTION | WS_SYSMENU|WS_VISIBLE
 BEGIN
-     LTEXT "MemÃ³ria:", -1, 10, 7, 58, 10, SS_LEFTNOWORDWRAP | WS_GROUP
+     LTEXT "Memória:", -1, 10, 7, 58, 10, SS_LEFTNOWORDWRAP | WS_GROUP
      COMBOBOX IDC_MEM, 70, 7, 74, 55, CBS_DROPDOWNLIST | WS_TABSTOP
 
-      LTEXT "EndereÃ§o:", -1, 7, 30, 58, 10, SS_RIGHT
+      LTEXT "Endereço:", -1, 7, 30, 58, 10, SS_RIGHT
       EDITTEXT IDC_ADDR, 70, 30, 60, 15, WS_BORDER | WS_TABSTOP
       LTEXT "#bytes:", -1, 7, 60, 58, 10, SS_RIGHT
       EDITTEXT IDC_BYTELEN,70,60,40,12, WS_BORDER | WS_TABSTOP
