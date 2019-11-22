@@ -1,10 +1,18 @@
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
+#include <string>
 
-#define MAX_POINTS 600
 
-template <unsigned MOD>
+
+#define MAX_POINTS  600
+
+
+using std::string;
+
+
+
+ template <unsigned MOD>
 class CircCount
 {
      int val;
@@ -17,7 +25,7 @@ class CircCount
      }
 public:
      CircCount():val(0){}
-     CircCount(unsigned v):val(v){val=v;}
+     CircCount(unsigned v): val(v){ }
      void operator=(unsigned v){val=v;}
      operator unsigned()const{return val;}
      CircCount &operator++(){inc();return *this;}
@@ -36,33 +44,34 @@ public:
 
 
 
-      typedef CircCount<MAX_POINTS> CountIterator;
+       typedef CircCount<MAX_POINTS>  CountIterator;
 
 
 class RingBuffer
 {
 
       CountIterator start,finish;
-      short val[1024];
+      short val[MAX_POINTS];
+
+
 public:
-      RingBuffer():start(0),finish(0){}
+     RingBuffer():start(0),finish(0)
+     { }
      ~RingBuffer(){}
       void pop_front(){ ++start; }
       void push_back(short p){
+           DWORD n;
            val[finish]=p;
-            if(++finish == start)
+           if(++finish == start)
                pop_front();
       }
       CountIterator begin(){return start;}
       CountIterator end(){return finish;}
-      short operator[](CountIterator idx)const
-      { return val[idx];}
+      short operator[](CountIterator idx)const { return val[idx];}
       short size()const{return finish-start;}
       bool empty()const{return start == finish;}
-      bool IsFull(){
-          return size() == MAX_POINTS-1;}
-};
-
+      bool IsFull(){ return size() == MAX_POINTS-1;}
+ };
 
 
 

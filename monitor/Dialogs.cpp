@@ -42,7 +42,7 @@ void CMonitorPage::Populate()
 {
 
       char name[32];
-      char addr[]={6,0x60,0x1,0x41,0};
+      char addr[]={6,0x60,0x1,0x42,0};
 
       sprintf(name,"%c%c%c %d.%d.%d",app->GetDeviceName()[0],
                                   app->GetDeviceName()[1],
@@ -62,11 +62,12 @@ void CMonitorPage::Populate()
 
 void CMonitorPage::Monitor(char *data)
 {
-      Translate(data+DataIdx,ADtoVolts,"V",ID_UIN);
-      Translate(data+DataIdx+2,ADtoVolts,"V",ID_UOUT);
-      Translate(data+DataIdx+4,ADtoAmps,"A",ID_IOUT);
+      Translate(data+DataIdx,AD_INtoVolts,2,"V",ID_UIN);
+      Translate(data+DataIdx+2,ADtoVolts,2,"V",ID_UOUT);
+      Translate(data+DataIdx+4,ADtoAmps,2,"A",ID_IOUT);
+      Translate(data+DataIdx+6,ADtoTemp,1,"ºC",ID_TEMP);
   /*     for(int i=0;i<6;i++)
-          printf("0x%x ",data[DataIdx+i]);
+          printf("0x%x ",data[DataIdx+i]&0xff);
        printf("\n");
 */
 }
@@ -159,12 +160,12 @@ CGraphPage::CGraphPage(CTabCtrl *Ctrl,char *name):TabPage(Ctrl,name,DLG_GRAPHICS
     rect.top=rect.top+15;
     rect.left+=50;rect.right-=50;
     rect.bottom=rect.top+h;
-    UGraph=new CGraphic(hWnd,"Volts",ID_GRAPH_U, rect,RGB(128,0,255));
+/*    UGraph=new CGraphic(hWnd,"Volts",ID_GRAPH_U, rect,RGB(128,0,255));
 
     rect.top=rect.top+rect.bottom+20;
      IGraph=new CGraphic(hWnd,"Amps",ID_GRAPH_I, rect, RGB(200,64,64));
 
-
+*/
 }
 
 CGraphPage::~CGraphPage()
@@ -221,8 +222,7 @@ void CGraphPage::Monitor(char *data)
 
 void CGraphPage::SetData(short v, short i)
 {
-     UGraph->SetData(v);
-     IGraph->SetData(i);
+
 }
 
 
@@ -251,7 +251,7 @@ void CGraphPage::SetData(short v, short i)
 
                   if((HWND)lpttext->hdr.idFrom == GetDlgItem(hwnd,ID_GRAPH_U))
                   {
-                      short p=MonGraph->UGraph->GetVal(pos);
+                      short p;//=MonGraph->UGraph->GetVal(pos);
                       float v=ADtoVolts(p);
                       if(p==-1)
                            sprintf(lpttext->szText," --- ");
@@ -265,7 +265,7 @@ void CGraphPage::SetData(short v, short i)
                   }
                   else if((HWND)lpttext->hdr.idFrom == GetDlgItem(hwnd,ID_GRAPH_I))
                   {
-                      short p=MonGraph->IGraph->GetVal(pos);
+                      short p;//=MonGraph->IGraph->GetVal(pos);
                       float v=ADtoAmps(p);
                       if(p==-1)
                            sprintf(lpttext->szText," --- ");
@@ -315,13 +315,9 @@ void CBattPage::Populate()
   //     char str[4];
   //  sprintf(str,"%s","--");
 //      SendMessage(hNSerial,WM_SETTEXT,0,(LPARAM)str);
- //     app->ReadDeviceData( hWnd,  0x49, 1, "", NULL);
-  //   short ad = app->ReadDeviceData( GetDlgItem(hWnd,ID_UOUT), 0x62, 2, "Volts", ADtoVolts);
- /*    app->ReadDeviceData( GetDlgItem(hWnd,ID_TEMP), 0x41, 1, "ºC", ADtoTemp);
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_AMP_H), 0x78, 4, "Amp/h", NULL);
 
-     SendDlgItemMessage(hWnd,ID_AUTONOMI,WM_SETTEXT,0,(LPARAM)str);
-
+      app->ReadDeviceData( hWnd, 0x49, 2);
+ /*
      float _U = ADtoVolts(ad)-10.5;
   // float _U= 11.0-10.5;
      ChargeState = (short)((float)(_U*100)/2.2);
@@ -332,19 +328,15 @@ void CBattPage::Populate()
     else if(ad < 0x363)
         nSerial=2;
  */
-      char data[]={1,0x41,2,0x62,4,0x78,0};
+      char data[]={1,0x42,4,0x78,0};
       DataIdx=app->Monitor(this,data);
 }
 void CBattPage::Monitor(char *data)
 {
- /*   printf("Monitor ");
-    for(int i=0;i<7;i++)
-       printf("0x%x ",*(data+DataIdx+i)&0xff);
-    printf("\n");
-   */
-      Translate(data+DataIdx,ADtoTemp,"ºC",ID_TEMP);
-      Translate(data+DataIdx+1,ADtoVolts,"V",ID_UOUT);
-      Translate(data+DataIdx+3,NULL,"A/h",ID_AMP_H);
+
+      Translate(data+DataIdx,ADtoTemp,1,"ºC",ID_TEMP);
+  //    Translate(data+DataIdx+1,ADtoVolts,"V",ID_UOUT);
+      Translate(data+DataIdx+1,NULL,4,"A/h",ID_AMP_H);
 
 }
 
@@ -464,9 +456,22 @@ BOOL CALLBACK CBattPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
              return FALSE;
         case EV_DATA_REQUEST:
            {
-             printf("CBattProc::Data_Request 0x%x\n",wParam);
+               char str[32];
+               short AD;
+               double v;
+               if(wParam == 0x2490405)
+               {
+                  AD=*(char*)lParam;
+                  sprintf(str,"%d A/h",AD);
+                  SendDlgItemMessage(Obj->hWnd,ID_CAPACITY,WM_SETTEXT,0,(LPARAM)str);
+
+                   AD=*(char*)(lParam+1);
+                  sprintf(str,"%d V",AD);
+                  SendDlgItemMessage(Obj->hWnd,ID_UOUT,WM_SETTEXT,0,(LPARAM)str);
+
+              }
            }
-             return FALSE;
+               return FALSE;
     }
 
     return FALSE;
@@ -602,9 +607,9 @@ void CPortPage::Populate()
                       dcb.StopBits == ONE5STOPBITS?"1.5":"2");
 
   	SendMessage(GetDlgItem(hWnd,ID_SBIT), WM_SETTEXT, 0, (LPARAM)str);
-     sprintf(str,"%s",dcb.fParity == EVENPARITY?"Ímpar":
-                      dcb.fParity == ODDPARITY? "Par":
-                      dcb.fParity == MARKPARITY? "Marca":"Sem paridade");
+     sprintf(str,"%s",dcb.Parity == EVENPARITY?"EVENPARITY":
+                      dcb.Parity == ODDPARITY? "ODDPARITY":
+                      dcb.Parity == MARKPARITY? "MARCPARITY":"NOPARITY");
   	SendMessage(GetDlgItem(hWnd,ID_PAR), WM_SETTEXT, 0, (LPARAM)str);
 
      sprintf(str,"%d ms",TimeOut.ReadIntervalTimeout);
@@ -634,9 +639,9 @@ BOOL CALLBACK CPortPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
              Obj=(CPortPage*)lParam;
              return FALSE;
         case WM_COMMAND:
-             if(LOWORD(wParam) == ID_BTN_DTR )
+             if(LOWORD(wParam) == ID_BTN_RTS )
              {
-                  Obj->OnDTRButton();
+                  Obj->OnRTSButton();
              }
              break;
     }
@@ -649,24 +654,24 @@ BOOL CALLBACK CPortPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 
 
 
-void CPortPage::OnDTRButton()
+void CPortPage::OnRTSButton()
 {
 
 
 
-     int dtr=app->Link->Dtr();
-     if(dtr < RS232_SUCCESS)
+     int rts=app->Link->Rts();
+     if(rts < RS232_SUCCESS)
      {
-         printf("Error Dtr()\n");
+         printf("Error Rts()\n");
          return;
      }
 
-     if(dtr)dtr=0;
-     else dtr=1;
+     if(rts)rts=0;
+     else rts=1;
 
-     app->Link->Dtr(dtr);
- //   st=app->Link->GetModemStatus();
- //   printf("0x%lx\n",st);
+     app->Link->Rts(rts);
+
+
 }
 
 
@@ -689,6 +694,7 @@ CConfigPage::~CConfigPage()
 void CConfigPage::Populate()
 {
      char str[64];
+
  /*   HDC dc=GetDC(hWnd);
     ModeVoltage=12;
 
@@ -697,13 +703,9 @@ void CConfigPage::Populate()
     TextOut(dc,20,20,str,lstrlen(str));
     //  SendDlgItemMessage(hWnd,ID_UMODE,WM_SETTEXT,0,(LPARAM)str);
 */
-  ///   app->ReadDeviceData( GetDlgItem(hWnd,ID_VOFF),0x50, 2, "V", ADtoVolts);
-   /*  app->ReadDeviceData( GetDlgItem(hWnd,ID_VFLOAT),0x52, 2, "V",ADtoVolts );
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_VOCT),0x54, 2, "V", ADtoVolts);
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_ITRIC),0x56, 2, "A", ADtoAmps);
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_IBLK),0x58, 2, "A", ADtoAmps);
-     app->ReadDeviceData( GetDlgItem(hWnd,ID_IOCT),0x5a, 2, "A", ADtoAmps);
-*/
+
+     app->ReadDeviceData( hWnd,0x50, 12);
+
 //    ReleaseDC(hWnd,dc);
  }
 
@@ -718,6 +720,52 @@ BOOL CALLBACK CConfigPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
          //    Obj->Hwnd=hwnd;
              return FALSE;
 
+        case EV_DATA_REQUEST:
+           {
+               char str[32];
+               short AD;
+               double v;
+               switch(wParam)
+               {
+                   case 0x0c500405:
+                      {
+                        AD=*(short*)lParam;
+                        v=ADtoVolts(AD);
+                        sprintf(str,"%f",v);
+                        SendDlgItemMessage(Obj->hWnd,ID_VOFF,WM_SETTEXT,0,(LPARAM)str);
+
+                        AD=*(short*)(lParam+2);
+                        v=ADtoVolts(AD);
+                        sprintf(str,"%f",v);
+                        SendDlgItemMessage(Obj->hWnd,ID_VFLOAT,WM_SETTEXT,0,(LPARAM)str);
+
+                        AD=*(short*)(lParam+4);
+                        v=ADtoVolts(AD);
+                        sprintf(str,"%f",v);
+                        SendDlgItemMessage(Obj->hWnd,ID_VOCT,WM_SETTEXT,0,(LPARAM)str);
+
+                        AD=*(short*)(lParam+6);
+                        v=ADtoAmps(AD);
+                        sprintf(str,"%f",v);
+                        SendDlgItemMessage(Obj->hWnd,ID_ITRIC,WM_SETTEXT,0,(LPARAM)str);
+
+                        AD=*(short*)(lParam+8);
+                        v=ADtoAmps(AD);
+                        sprintf(str,"%f",v);
+                        SendDlgItemMessage(Obj->hWnd,ID_IBLK,WM_SETTEXT,0,(LPARAM)str);
+
+                        AD=*(short*)(lParam+10);
+                        v=ADtoAmps(AD);
+                        sprintf(str,"%f",v);
+                        SendDlgItemMessage(Obj->hWnd,ID_IOCT,WM_SETTEXT,0,(LPARAM)str);
+                        break;
+                         /// Tensão de disparo 12,6v
+                      }
+
+               }
+
+               break;
+           }
     }
 
     return FALSE;

@@ -146,10 +146,9 @@ public:
     void SetXonXoff( DWORD XonXoff ){}
     void SetRtsCts( DWORD RtsCts )
     { //        printf("RtsCts %d %d\n",RtsCts,RtsCts==TRUE?TRUE:FALSE);
-           if(RtsCts==FALSE)
+  /*         if(RtsCts==DISABLE)
            {
                DCB::fOutxCtsFlow =  FALSE;
-               DCB::fOutxDsrFlow = FALSE;
                 DCB::fRtsControl = RTS_CONTROL_DISABLE;
                DCB::fOutX = FALSE;
                DCB::fInX = FALSE;
@@ -157,27 +156,24 @@ public:
            else
            {
                DCB::fOutxCtsFlow =  TRUE;
-               DCB::fOutxDsrFlow = FALSE;
                DCB::fRtsControl = RTS_CONTROL_HANDSHAKE;
                DCB::fOutX = FALSE;
                DCB::fInX = FALSE;
            }
-    }
+    */ }
     void SetDtrDsr( DWORD DtrDsr )
     { //        printf("DtrDsr %d %d\n",DtrDsr,DtrDsr==TRUE?TRUE:FALSE);
-  /*         if(DtrDsr==FALSE)
+   /*         if(DtrDsr==DISABLE)
            {
-               DCB::fOutxCtsFlow = FALSE;
                DCB::fOutxDsrFlow = FALSE;
-                DCB::fDtrControl = DTR_CONTROL_ENABLE;
+                DCB::fDtrControl = DTR_CONTROL_DISABLE;
                DCB::fOutX = FALSE;
                DCB::fInX = FALSE;
            }
            else
            {
-                DCB::fOutxCtsFlow = FALSE;
                DCB::fOutxDsrFlow = TRUE;
-               DCB::fDtrControl = DTR_CONTROL_DISABLE;
+               DCB::fDtrControl = DTR_CONTROL_HANDSHAKE;
                DCB::fOutX = FALSE;
                DCB::fInX = FALSE;
           }

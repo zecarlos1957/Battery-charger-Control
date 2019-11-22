@@ -167,15 +167,26 @@ TabPage::~TabPage()
 
 }
 
-void TabPage::Translate(char *data, AD_Value Func, char *t,DWORD ID_VAL)
+void TabPage::Translate(char *data, AD_Value Func,char sz, char *t,DWORD ID_VAL)
 {
      char str[32];
-     short AD= *(short*)data;
-
+     DWORD AD;
+     switch(sz)
+     {
+         case 1: AD = *data;break;
+         case 2: AD = *(short*)data;break;
+         case 4: AD = *(DWORD*)data;break;
+     }
      double val;
-     if(Func)val = Func(AD);
-     else val=AD;
-     sprintf(str,"%f",val);
+     if(Func)
+     {
+         val = Func(AD);
+         sprintf(str,"%f",val);
+     }
+     else
+     {
+         sprintf(str,"%d",AD);
+     }
      char *ptr = str;
      int digit;
 

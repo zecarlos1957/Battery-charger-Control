@@ -44,7 +44,7 @@ static char THIS_FILE[]=__FILE__;
 void PrintDCB(DCB &m_Dcb)
 {
 
-        printf(" BaundRate %d ", m_Dcb.BaudRate);
+ /*       printf(" BaundRate %d ", m_Dcb.BaudRate);
         printf("%d Bits ", m_Dcb.ByteSize);
         printf("%s StopBit ",(m_Dcb.StopBits == ONESTOPBIT ? "1":
                               m_Dcb.StopBits == TWOSTOPBITS ? "2":"1.5") );
@@ -53,7 +53,7 @@ void PrintDCB(DCB &m_Dcb)
                       m_Dcb.Parity==ODDPARITY  ? "OddParity":
                       m_Dcb.Parity==MARKPARITY ? "MarkParity":
                       m_Dcb.Parity==SPACEPARITY? "SpaceParity":"NoParity"));
-
+*/
         printf("%s  %s  CtsFlow %d DsrFlow %d\n",
                 m_Dcb.fDtrControl == DTR_CONTROL_DISABLE?"DTR_CONTROL_DISABLE":
                 m_Dcb.fDtrControl == DTR_CONTROL_ENABLE?"DTR_CONTROL_ENABLE":
@@ -130,6 +130,10 @@ Win32Port::Win32Port( const string &port,
     // is critical, because our input and output threads depend on
     // the asynchronous capabilities of Win32.
     //
+
+
+
+
     m_hPort = CreateFile( port.c_str(),
                           GENERIC_READ | GENERIC_WRITE,
                           0,
@@ -146,6 +150,7 @@ Win32Port::Win32Port( const string &port,
     // and the port is then really running.
     //
     if ( m_hPort != INVALID_HANDLE_VALUE ) {
+
         m_dwErrors = 0;            //Clear cumulative line status errors
         m_iBreakDuration = 0;    //No break in progress, initialize to 0
         SetLastError( 0 );        //Clear any Win32 error from this thread
@@ -153,7 +158,7 @@ Win32Port::Win32Port( const string &port,
         saved_settings = settings; //Only needed because base class dumps
                                    //the saved settings in debug output
         //Init timeous to ensure our overlapped reads work
-        COMMTIMEOUTS timeouts = { 0x01,  0, 0, 0, 0 };//{ 0x01, 0, 0, 150, 0 };
+        COMMTIMEOUTS timeouts = { 0x01,  0, 0, 0, 0  };//{ 0x01, 0, 0, 150, 0 };
         SetCommTimeouts( m_hPort, &timeouts );
         SetupComm( m_hPort, 500, 500 ); //set buffer sizes
         error_status = RS232_SUCCESS;     //clear current class error
@@ -212,8 +217,6 @@ Win32Port::Win32Port( const string &port,
             m_hBreakRequestEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
             m_hInputThread = _beginthread( InputThread, 0, (void *) this );
             m_hOutputThread = _beginthread( OutputThread, 0, (void *) this );
-
-            return;
         }
     }
     //
@@ -224,7 +227,7 @@ Win32Port::Win32Port( const string &port,
     //
     else
         translate_last_error();
-    printf("Error opening port %s\n",port.c_str());
+
 }
 
 
@@ -245,6 +248,8 @@ Win32Port::Win32Port( const string &port,
 //
 Win32Port::~Win32Port()
 {
+
+
     if ( m_hPort != INVALID_HANDLE_VALUE ) {
         SetEvent( m_hKillOutputThreadEvent );
         SetEvent( m_hKillInputThreadEvent );
@@ -253,6 +258,9 @@ Win32Port::~Win32Port()
                                 (HANDLE *) handles,
                                 TRUE,
                                 INFINITE );
+
+
+
         CloseHandle( m_hPort );
         m_hPort = INVALID_HANDLE_VALUE;
         CloseHandle( m_hKillInputThreadEvent );
@@ -1028,11 +1036,12 @@ RS232Error Win32Port::write_settings()
     m_Dcb.SetDtrDsr( settings.DtrDsr );
 
  ///*****************
- //    PrintDCB(m_Dcb);
+ //     PrintDCB(m_Dcb);
  /// *******************
 
 
-    SetCommState( m_hPort, &m_Dcb );
+    if(SetCommState( m_hPort, &m_Dcb )==0)
+       DisplayLastError("SetCommState()",0);
     if ( GetLastError() != 0 ) {
         if ( GetLastError() == ERROR_INVALID_HANDLE )
             return (RS232Error) WIN32_SETTINGS_FAILURE;
@@ -1041,7 +1050,13 @@ RS232Error Win32Port::write_settings()
             return (RS232Error) WIN32_CHECK_WINDOWS_ERROR;
         }
     }
-    return error;
+
+  /*  printf("Dtr Rts Cts Dsr\n   %d    %d   %d   %d  -> ",m_Dcb.fDtrControl,m_Dcb.fRtsControl,m_Dcb.fOutxCtsFlow,m_Dcb.fOutxDsrFlow);
+    DCB dcb;
+     GetCommState(m_hPort,&dcb);
+       printf(" %d   %d   %d   %d\n",dcb.fDtrControl,dcb.fRtsControl,dcb.fOutxCtsFlow,dcb.fOutxDsrFlow);
+*/
+     return error;
 }
 
 //

@@ -25,6 +25,16 @@
 #define MAX_DUTY    1
 
 
+
+#define BANK0:1    0x00  /// xxxx xxx0
+#define BANK2:3    0x01  /// xxxx xxx1
+#define ROM        0x00  /// xxxx 00xx
+#define RAM        0x04  /// xxxx 01xx
+#define EEPROM     0x08  /// xxxx 10xx
+#define READ_MEM   0x00  /// xxx0 xxxx
+#define WRITE_MEM  0x10  /// xxx1 xxxx
+
+
  enum FlowControl
   {
     NoFlowControl,
@@ -61,7 +71,8 @@ BOOL CALLBACK MessageProc(HWND hwnd , UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK UserDataProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK ConfigProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK BuildGraph(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK  GraphProc(HWND Hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK  WinGraphProc(HWND Hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK  GraphProc(HWND Hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DWORD WINAPI ListenToSerial(LPVOID Param);
 
@@ -113,7 +124,7 @@ protected:
       HWND hWnd;
       char name[32];
       int DataIdx;
-      void Translate(char *data, AD_Value Func, char *t, DWORD ID_VAL);
+      void Translate(char *data, AD_Value Func,char sz, char *t, DWORD ID_VAL);
 public:
       TabPage(CTabCtrl *Ctrl,char *name,UINT id, DLGPROC Proc,TabPage *Obj);
       virtual ~TabPage();
@@ -130,13 +141,12 @@ class Connection: public Win32Port
       HWND hWnd;
       bool OnLine;
       char FrameData[64];
-      char TXDataBuffer[64];
       char mode;
       char PortName[8];
 public:
       Connection(HWND hwnd, std::string &port);
      ~Connection();
-      DWORD ReadDevice(int len);
+      bool IsValid(){return m_hPort != INVALID_HANDLE_VALUE;}
       char * BuildCmd(char cmd, char memTyp, char addr,char len);
       BOOL SendCommand(char *comd);
       const char *GetPortName()const{return (const char*)PortName;}
@@ -155,14 +165,15 @@ public:
     virtual void BreakDetectNotify(){printf("BreakDetectNotify ");}
 };
 
-typedef struct
+typedef struct  TDataRequest
 {
     HWND hwnd;
     char addr;
-    char sz;
+    char len;
     char *t;
     AD_Value Func;
-}TDataRequest;
+    TDataRequest(HWND hnd, char add, char s):hwnd(hnd),addr(add),len(s){}
+};
 
 
 class App
@@ -172,18 +183,19 @@ class App
       HWND hwnd;
       void CreateMainMenu();
       char DeviceName[32];
-      TDataRequest DataRequest;
+      TDataRequest *DataRequest[32];
+      int ReqIdx;
       char MonList[64];
-      int CmdLen;
       CTabCtrl *TabCtrl;
       BYTE AFlags;
       BYTE ReadLoopCount;
       short DataRefreshRate;
-      DWORD nDuty;
       DWORD ListSz;
        TabPage * MonPage[MAX_TABPAGE];
        HDEVNOTIFY hDevNotify;
       BOOL RegisterNotificationMsg();
+      HWND GraphMon;
+      bool Initialized;
 public:
        Connection *Link;
 
@@ -196,8 +208,8 @@ public:
       LRESULT OnNotify(WPARAM wParam,LPARAM lParam);
       LRESULT OnDeviceChange(WPARAM wParam,LPARAM lParam);
       LRESULT OnPaint(WPARAM wParam,LPARAM lParam);
+      LRESULT TimeOver();
 
-      int GetCmdLen(){return CmdLen;}
       int GetListSz(){return ListSz;}
       short GetRefreshRate(){return DataRefreshRate;}
       char *GetDeviceName(){return DeviceName;}
@@ -205,11 +217,12 @@ public:
       Connection *GetConnection(){return Link;}
       char GetMonLen();
       HWND GetHandle(){return hwnd;}
-      short ReadDeviceData(HWND u1, char addr, char sz, char *t, AD_Value Func=NULL);
+      short ReadDeviceData(HWND u1, char addr, char sz);
       DWORD Monitor( TabPage *page,char *addr);
+      void SetMonitor(HWND);
       void SetRefreshRate(short r);
       void Refresh(char *data);
-      void Process(short msg, char *data);
+      DWORD GetAvailablePorts ( std::string* portList );
 
 };
 
@@ -232,32 +245,48 @@ public:
       void Monitor(char *data);
 };
 
+   typedef struct
+    {
+        char name[32];
+        char Addr;
+        char size;
+        COLORREF color;
+        short min,max;
+        AD_Value Func;
+    }GData;
 
 class CGraphic
 {
     HWND hwnd;
     COLORREF color;
-    HPEN hPen;
+    HPEN hPen[8];
     HPEN hDelPen;
-    short min,max;
-    short AD_min;
-    short AD_max;
-    AD_Value Func;
+    int ndata;
     RingBuffer Buffer;
     char name[32];
+    HANDLE hFile;
     short Delta;
+  //  BOOL AppDataMode;
+     GData **GDataList;
+    int GetAddrIndex(char*,char);
  public:
 
-       CGraphic(HWND hParent, char *nm,UINT id, RECT rect, COLORREF c);
+       CGraphic(HWND hParent, char *nm,  GData **Gdt, RECT rect, COLORREF c);
       ~CGraphic();
        void DrawTimeLine(HDC dc, int x,int y, int w);
        void DrawScale(HDC dc,int y1);
-       float GetVal(short xPos);
-
-       void SetData(short v);
+       float GetVal(short i, short xPos);
+       void FillStruct( GData **Gdt);
+       int Populate(GData **Gdt);
+       void SetData(short i,short v);
+       void DrawData(short i,short v);
        void OnMouseWheel(short d);
-       void SetRange(short min, short max,AD_Value Func);
-  //    static  BOOL CALLBACK GraphProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+       void SetRange(short i, short min, short max,AD_Value Func);
+       static  LRESULT CALLBACK GraphProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+       void Monitor(char *addr, char *data);
+       RingBuffer *GetBuffer(){return &Buffer;}
+       void FillHdrFile(const char *nm,char *info);
+       void ReadDataFromFile();
 };
 
 class CGraphPage:public TabPage
@@ -315,7 +344,7 @@ public:
     ~CPortPage();
     virtual void Populate();
     static BOOL CALLBACK DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    void OnDTRButton();
+    void OnRTSButton();
 };
 
 class CConfigPage:public TabPage

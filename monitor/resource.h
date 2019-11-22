@@ -40,7 +40,7 @@
 #define ID_RCONST       408
 #define ID_WMULT        409
 #define ID_WCONST       410
-#define ID_BTN_DTR       411
+#define ID_BTN_RTS       411
 
 #define MESSAGE_DLG    500
 #define ID_ERRMSG      501
@@ -65,8 +65,10 @@
 #define ID_IBLK         705
 #define ID_IOCT          706
 #define ID_UMODE         707
+#define ID_ON            708
 
 #define DLG_BATTERY        800
+#define ID_CAPACITY        801
 
 #define DLG_PAINEL         900
 
@@ -87,6 +89,7 @@
 #define ID_OK               1205
 #define ID_CANCEL           1206
 #define ID_OPEN             1207
+#define ID_SAVEASFILE       1208
 
 
 #define ID_DEVICE_CHARGE_ON      1301
@@ -109,9 +112,10 @@
 #define IDS_MSG1           1400
 
 
-#define EV_APP_INIT     WM_USER+1
-#define EV_DEVICE_MSG   WM_USER+2
-#define EV_DATA_REQUEST WM_USER+3
+#define EV_APP_INIT       WM_USER+1
+#define EV_DEVICE_MSG     WM_USER+2
+#define EV_DATA_REQUEST   WM_USER+3
+
 
 
 #endif
