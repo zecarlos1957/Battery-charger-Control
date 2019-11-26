@@ -1370,23 +1370,23 @@ I_Ddone
 UsartRX:
    bcf STATUS,RP0
    movfw RS_sz
-   btfsc STATUS,Z
-   goto init_p
+   btfsc STATUS,Z      ; if frame size == 0
+   goto init_frame     ; start build frame
    ; if chkSum>0 return
-   movfw RS_chkSum
-   btfsc STATUS,Z
-   goto Rec
+   movfw RS_chkSum     ; else
+   btfsc STATUS,Z      ; if frame not finish
+   goto Rec            ; save data byte
    movfw RCREG
    return
 Rec:
-   movlw RS_sz
-   addwf RS_sz,w
-   movwf FSR
+   movlw RS_sz      ; frame first byte address to W 
+   addwf RS_sz,w    ; add bytes received
+   movwf FSR        ; update frame pointer index
 
   ; check error
    btfss RCSTA,FERR
    goto NO_FERR
-   bsf RS_ERROR
+   bsf RS_ERROR      
    movlw 0x46
    movwf Err_Simbol
 NO_FERR:
@@ -1399,20 +1399,19 @@ NO_FERR:
    bsf RCSTA,CREN
 NO_OERR2
 
-   movfw RCREG
-   movwf INDF
-   incf RS_sz,F
-   movfw RS_sz
-   sublw 5
+   movfw RCREG        ; get data
+   movwf INDF         ; save data to frame
+   incf RS_sz,F       ; increment index
+   movfw RS_sz 
+   sublw 5            ; check if it is last byte
    btfsc STATUS,Z
-   return
+   return             
    btfss PIR1,RCIF
    goto $-1
    goto UsartRX
 
-init_p:
-
-  ; check error
+init_frame:
+  ; check errors
    btfss RCSTA,FERR
    goto NO_ERR1
    bsf RS_ERROR
@@ -1428,12 +1427,12 @@ NO_ERR1:
 ;   bsf RCSTA,CREN
 ;NO_ERR2
 
-   movfw RCREG
-   sublw 5
-   btfss STATUS,Z
-   return
-   incf RS_sz,F
-   btfss PIR1,RCIF
+   movfw RCREG     ; get byte data to W
+   sublw 5         ; teste frame ID
+   btfss STATUS,Z  ; if data != frame ID
+   return          ; abort 
+   incf RS_sz,F    ; else increment frame size
+   btfss PIR1,RCIF  
    goto $-1
    goto UsartRX
 

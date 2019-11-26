@@ -43,9 +43,9 @@ SetupConfig
           ; xxxxxxx0   RC0   output alarm sirene                  *
           ; xxxxxx1x   RC1   DTR   
           ; xxxxx0xx   RC2   PWM 
-          ; xxxx0xxx   RC3   CTS
+          ; xxxx0xxx   RC3   DSR
           ; xxx1xxxx   RC4   RTS
-          ; xx0xxxxx   RC5   DSR 
+          ; xx0xxxxx   RC5   CTS 
           ; xxxxxxxx   RC6   TX serial
           ; xxxxxxxx   RC7   RX serial
     movwf TRISC

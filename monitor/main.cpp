@@ -163,10 +163,10 @@ App::App(HWND hwnd):hwnd(hwnd),
 
      TabCtrl = new  CTabCtrl(hwnd);
      TabCtrl->Insert(new CMonitorPage(TabCtrl,"Monitor"));
-     TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
-     TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
-     TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
-     TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
+     ///TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
+     ///TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
+     ///TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
+     ///TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
 
      if(Link && Link->IsValid())
      {
@@ -174,7 +174,7 @@ App::App(HWND hwnd):hwnd(hwnd),
           PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
 
      }
-     else printf("O equipamento não foi localizado.\nO cabo poderá estar desligado.");
+     else printf("O dispositivo não foi localizado.\nO cabo poderá estar desligado.");
 
 }
 
@@ -291,11 +291,12 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
     {
            case ID_DEVICE_CHARGE_ON:
              {
-/*                char *frame=BuildCmd(READ_MEM,RAM,0x45,1);
-               PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);                char flags =(~AFlags)&0x04;       /// bit 2  0 -> CHARGE_OFF  1 -> CHARGE_ON
+                char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
+               PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
+                char flags =(~AFlags)&0x04;       /// bit 2  0 -> CHARGE_OFF  1 -> CHARGE_ON
                 flags = flags |(AFlags&0xfb);
 
-               frame=BuildCmd(WRITE_MEM,RAM,0x45,1);
+               frame=Link->BuildCmd(WRITE_MEM,RAM,0x45,1);
                 Link->SendCommand(frame);
                 Link->SendData(1,&flags);
 
@@ -304,56 +305,56 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
                 {
                     char data;    /// clear CCPR1L
 
-                    frame=BuildCmd(WRITE_MEM,RAM,CCPR1L,1);
+                    frame=Link->BuildCmd(WRITE_MEM,RAM,CCPR1L,1);
                     Link->SendCommand(frame);
                     data=0;
                      Link->SendData(1,&data);
 
-                    frame=BuildCmd(READ_MEM,RAM,CCP1CON,1);
+                    frame=Link->BuildCmd(READ_MEM,RAM,CCP1CON,1);
                     Link->SendCommand(frame);     /// Read CCP1CON
-                     Link->ReadDevice(CmdLen);
+//                     Link->ReadDevice(CmdLen);
                      data = *Link->GetBuffer()&0x0f;
 
-                    frame=BuildCmd(WRITE_MEM,RAM,CCP1CON,1);
+                    frame=Link->BuildCmd(WRITE_MEM,RAM,CCP1CON,1);
                     Link->SendCommand(frame);     /// clear CCPiCON(HI nibble)
                      Link->SendData(1,&data);
 
                 }
 
-                frame=BuildCmd(READ_MEM,RAM,0x45,1);
+                frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
                 if(Link->SendCommand(frame))
                 {
-                  Link->ReadDevice(CmdLen);
+ //                 Link->ReadDevice(CmdLen);
                   AFlags = *Link->GetBuffer();
                 }
                 if(AFlags&0x04)
                    CheckMenuItem(GetMenu(hwnd), ID_DEVICE_CHARGE_ON,MF_CHECKED	);
                 else if((AFlags&0x04) == 0)CheckMenuItem(GetMenu(hwnd), ID_DEVICE_CHARGE_ON,MF_UNCHECKED	);
 
-*/
+
             }
                 break;
           case ID_SLOW:
              {
-  /*             char data=1;
-               char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set SLOW_CHARGE
+                char data=1;
+               char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set SLOW_CHARGE
                Link->SendCommand(frame);
                Link->SendData(1,&data);
-    */
+
              }
                break;
           case ID_FAST:
              {
-   /*              char data=2;
-               char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FAST_CHARGE
+                  char data=2;
+               char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FAST_CHARGE
                Link->SendCommand(frame);
                Link->SendData(1,&data);
-     */        }
+              }
                break;
           case ID_EQUALIZE:
              {
-     /*            char data=3;
-                   char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set EQUALIZE
+                char data=3;
+                   char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set EQUALIZE
                     Link->SendCommand(frame);
                     Link->SendData(1,&data);
               //       AddDuty(50);
@@ -363,35 +364,35 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
                   ///            0x08 -> 120ma
                 ///
                     data=4;
-                    frame=BuildCmd(WRITE_MEM,RAM,0x5A,1); /// set I_oct (low byte)
+                    frame=Link->BuildCmd(WRITE_MEM,RAM,0x5A,1); /// set I_oct (low byte)
                     Link->SendCommand(frame);
                     Link->SendData(1,&data);
 
                   ///      Medir o tempo de resposta Amp/H
 
-*/
+
              }
                break;
           case ID_FLOTING:
              {
-  /*               char data=4;
-                  char *frame=BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FLOTING
-                   printf("frame 0x%x 0x%x 0x%x 0x%x 0x%x\n",FrameData [0],FrameData [1],FrameData [2],FrameData [3],FrameData [4]);
+                  char data=4;
+                  char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x40,1); /// set FLOTING
+///                   printf("frame 0x%x 0x%x 0x%x 0x%x 0x%x\n",FrameData [0],FrameData [1],FrameData [2],FrameData [3],FrameData [4]);
                     Link->SendCommand(frame);
                      Link->SendData(1,&data);
-   */          }
+              }
                break;
           case ID_DEVICE_RESET:
              {
-    /*           char data=0;
-               char *frame=BuildCmd(WRITE_MEM,RAM,PCLATH,1);
+               char data=0;
+               char *frame=Link->BuildCmd(WRITE_MEM,RAM,PCLATH,1);
                Link->SendCommand(frame);
                Link->SendData(1,&data);
 
-               frame=BuildCmd(WRITE_MEM,RAM,PCL,1);
+               frame=Link->BuildCmd(WRITE_MEM,RAM,PCL,1);
                Link->SendCommand(frame);
                Link->SendData(1,&data);
-     */       }
+            }
                break;
           case ID_DEVICE_MEM:
              {
@@ -438,8 +439,8 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
            case 0x6000805:   /// GetDeviceName
               {
                 CopyMemory(DeviceName,(const void*)lParam,6);
-                if(memcmp((const void*)DeviceName,"AZA",3))
-                   return 0;
+   //             if(memcmp((const void*)DeviceName,"AZA",3))
+   //                return 0;
                 Initialized=true;
 
                 TabCtrl->Populate();
