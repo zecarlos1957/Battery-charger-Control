@@ -1,6 +1,17 @@
 *.hex
 *.o
+*.err
+*.lst
+*.cof
+*.map
+*.mcs
+*.mcw
+*.sbs
+*.txt
+*.dat
 *.cbp
 *.depend
 *.layout
 *.mcs
+monitor/bin
+monitor/obj
