@@ -26,7 +26,8 @@ SetupConfig
           ; ------1-   AN1 input  U2 analog signal
           ; -----1--   AN2 input  I1 analog signal
           ; ----1---   AN3 input  temperature   analog signal
-          ; --00----   RA4/RA5 output RW/RS display
+          ; ---0----   RA4 output RS display
+          ; --0-----   RA5 output select 40A/120A
     movwf TRISA
     
 
