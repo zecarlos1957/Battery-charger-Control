@@ -42,35 +42,14 @@
 using namespace std;
 
 HINSTANCE hInst;
- App *app=NULL;
+App *app = NULL;
 
 //Connection *Link;
 
 static const GUID GUID_DEVICEINTERFACE_LIST[] =
 {
-	/// GUID_DEVINTERFACE_USB_DEVICE
-//	{ 0xA5DCBF10, 0x6530, 0x11D2, { 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED } },
-
-	/// GUID_DEVINTERFACE_DISK
-//	{ 0x53f56307, 0xb6bf, 0x11d0, { 0x94, 0xf2, 0x00, 0xa0, 0xc9, 0x1e, 0xfb, 0x8b } },
-
-	/// GUID_DEVINTERFACE_HID,
-//	{ 0x4D1E55B2, 0xF16F, 0x11CF, { 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30 } },
-
-	/// GUID_NDIS_LAN_CLASS
-//	{ 0xad498944, 0x762f, 0x11d0, { 0x8d, 0xcb, 0x00, 0xc0, 0x4f, 0xc3, 0x35, 0x8c } }
-
 	// GUID_DEVINTERFACE_COMPORT
-	{ 0x86e0d1e0, 0x8089, 0x11d0, { 0x9c, 0xe4, 0x08, 0x00, 0x3e, 0x30, 0x1f, 0x73 } },
-
-	// GUID_DEVINTERFACE_SERENUM_BUS_ENUMERATOR
-//	{ 0x4D36E978, 0xE325, 0x11CE, { 0xBF, 0xC1, 0x08, 0x00, 0x2B, 0xE1, 0x03, 0x18 } },
-
-	// GUID_DEVINTERFACE_PARALLEL
-//	{ 0x97F76EF0, 0xF883, 0x11D0, { 0xAF, 0x1F, 0x00, 0x00, 0xF8, 0x00, 0x84, 0x5C } },
-
-	// GUID_DEVINTERFACE_PARCLASS
-//	{ 0x811FC6A5, 0xF728, 0x11D0, { 0xA5, 0x37, 0x00, 0x00, 0xF8, 0x75, 0x3E, 0xD1 } }
+	{ 0x86e0d1e0, 0x8089, 0x11d0, { 0x9c, 0xe4, 0x08, 0x00, 0x3e, 0x30, 0x1f, 0x73 } }
 };
 
 
@@ -155,26 +134,26 @@ App::App(HWND hwnd):hwnd(hwnd),
     RegisterNotificationMsg();
 
     std::string portList;
-    DWORD numPort=GetAvailablePorts ( &portList );
-     if(numPort)
-          Link = new Connection(hwnd, portList);    /// Open last serial com port
+    DWORD numPort = GetAvailablePorts(&portList);
+    if(numPort)
+        Link = new Connection(hwnd, portList);    /// Open last serial com port
 
 
 
-     TabCtrl = new  CTabCtrl(hwnd);
-     TabCtrl->Insert(new CMonitorPage(TabCtrl,"Monitor"));
-     ///TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
-     ///TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
-     ///TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
-     ///TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
+    TabCtrl = new  CTabCtrl(hwnd);
+    TabCtrl->Insert(new CMonitorPage(TabCtrl,"Monitor"));
+    TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
+    TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
+    TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
+    TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
 
-     if(Link && Link->IsValid())
-     {
-          char *frame=Link->BuildCmd(READ_MEM, EEPROM, 0x00, 6);
-          PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
+    if(Link && Link->IsValid())
+    {
+        char *frame=Link->BuildCmd(READ_MEM, EEPROM, 0x00, 6);
+        PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
 
-     }
-     else printf("O dispositivo não foi localizado.\nO cabo poderá estar desligado.");
+    }
+    else printf("O dispositivo não foi localizado.\nO cabo poderá estar desligado.");
 
 }
 
@@ -468,8 +447,8 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
                 {
                     char str[128];
                     char tmp[32];
-                    str[0]='\0';
-                    int n=wParam>>24;
+                    str[0] = '\0';
+                    int n = wParam >> 24;
         //             printf("msg 0x%x : ",wParam);
                      if(((wParam>>8)&0xf0) == READ_MEM)
                     {
@@ -482,7 +461,7 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 
 
 
-                        HWND Hwnd=GetActiveWindow();
+                        HWND Hwnd = GetActiveWindow();
                         if(Hwnd != hwnd)  /// Request from Memory access dialog
                         {
                             int i;
@@ -532,21 +511,21 @@ LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
 
 DWORD App::Monitor(TabPage *page, char *listInfo)
 {
-     int i=GetMonLen();
+    int i = GetMonLen();
 
-     MonPage[mIndex++]=page;
-      while(*listInfo)
-     {
-         if(ListSz == 63)
-         {
-             printf("MonList is full\n");
-             break;
-         }
+    MonPage[mIndex++] = page;
+    while(*listInfo)
+    {
+        if(ListSz == 63)
+        {
+            printf("MonList is full\n");
+            break;
+        }
 
-         MonList[++ListSz] = *listInfo++;
-     }
-     MonList[0]=ListSz>>1;
-      return i;
+        MonList[++ListSz] = *listInfo++;
+    }
+    MonList[0] = ListSz >> 1;
+    return i;
 }
 
 void App::SetMonitor(HWND hnd)
@@ -1182,28 +1161,25 @@ Connection::Connection(HWND hwnd, std::string &port):Win32Port(port, CBR_9600, N
 {
 
 
-     lstrcpy(PortName,port.c_str());
-  if(error_status) DisplayLastError("Connectio::");
-
+    lstrcpy(PortName,port.c_str());
+    if(error_status) 
+        DisplayLastError("Connectio::");
 }
+
 Connection::~Connection()
 {
-
-         Dtr(0);Rts(0);
-
-         SetCommMask(m_hPort,0);
+    Dtr(0);
+    Rts(0);
+    SetCommMask(m_hPort,0);
 }
-
 
 BOOL Connection::SendCommand(char *comd)
 {
-
-     if(write_buffer(comd,5)!= RS232_SUCCESS)
-     {
-         DisplayLastError("WritePort");
-         return FALSE;
-     }
-
+    if(write_buffer(comd, 5) != RS232_SUCCESS)
+    {
+        DisplayLastError("WritePort");
+        return FALSE;
+    }
     return TRUE;
 }
 

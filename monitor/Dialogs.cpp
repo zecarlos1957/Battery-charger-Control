@@ -28,9 +28,6 @@ CMonitorPage::CMonitorPage(CTabCtrl *Ctrl,char *nm):TabPage(Ctrl,nm,DLG_MONITOR,
 {
   //   HINSTANCE hInst=reinterpret_cast<HINSTANCE>(GetWindowLong(GetHwnd(),GWL_HINSTANCE));
     hFrontBmp=LoadBitmap(hInst,MAKEINTRESOURCE(IDB_SYSTEM));
-
-
-
  }
 
 CMonitorPage::~CMonitorPage()
@@ -41,20 +38,20 @@ CMonitorPage::~CMonitorPage()
 void CMonitorPage::Populate()
 {
 
-      char name[32];
-      char addr[]={6,0x60,0x1,0x42,0};
+    char name[32];
+    char addr[] = {6, 0x60, 0x1, 0x42, 0};
 
-      sprintf(name,"%c%c%c %d.%d.%d",app->GetDeviceName()[0],
-                                  app->GetDeviceName()[1],
-                                  app->GetDeviceName()[2],
-                                  app->GetDeviceName()[3],
-                                  app->GetDeviceName()[5]>>4,
-                                  app->GetDeviceName()[5]&0x0f);
+    sprintf(name, "%c%c%c %d.%d.%d", app->GetDeviceName()[0],
+                                   app->GetDeviceName()[1],
+                                   app->GetDeviceName()[2],
+                                   app->GetDeviceName()[3],
+                                   app->GetDeviceName()[5]>>4,
+                                   app->GetDeviceName()[5]&0x0f);
 
-      HWND hDev=GetDlgItem(hWnd,ID_DEV);
-      SendMessage(hDev,WM_SETTEXT,0,(LPARAM)name);
+    HWND hDev = GetDlgItem(hWnd, ID_DEV);
+    SendMessage(hDev, WM_SETTEXT, 0, (LPARAM)name);
 
-  DataIdx = app->Monitor(this,addr);
+    DataIdx = app->Monitor(this, addr);
 
     printf("Dev name %s\n",name);
 }
@@ -113,16 +110,16 @@ LRESULT  CMonitorPage::OnNotify(WPARAM wParam,LPARAM lParam)
 }
 LRESULT  CMonitorPage::OnPaint(WPARAM wParam,LPARAM lParam)
 {
-       PAINTSTRUCT ps;
-      BITMAP bm;
-     HDC hdc=BeginPaint(hWnd,&ps);
-     HDC hdcMem=CreateCompatibleDC(hdc);
-     HBITMAP hbmOld=(HBITMAP)SelectObject(hdcMem,hFrontBmp);
-     GetObject(hFrontBmp,sizeof(bm),&bm);
-     BitBlt(hdc,5,5,bm.bmWidth,bm.bmHeight,hdcMem,0,0,SRCAND	);
-     SelectObject(hdcMem,hbmOld);
-     DeleteDC(hdcMem);
-     EndPaint(hWnd ,&ps);
+    PAINTSTRUCT ps;
+    BITMAP bm;
+    HDC hdc=BeginPaint(hWnd,&ps);
+    HDC hdcMem=CreateCompatibleDC(hdc);
+    HBITMAP hbmOld=(HBITMAP)SelectObject(hdcMem,hFrontBmp);
+    GetObject(hFrontBmp,sizeof(bm),&bm);
+    BitBlt(hdc,5,5,bm.bmWidth,bm.bmHeight,hdcMem,0,0,SRCAND	);
+    SelectObject(hdcMem,hbmOld);
+    DeleteDC(hdcMem);
+    EndPaint(hWnd ,&ps);
 // printf("ps.rc %d, %d, %d, %d\n",  ps.rcPaint.left,ps.rcPaint.top, ps.rcPaint.right,ps.rcPaint.bottom);
 //  printf("bmWidth %d bmHeight %d\n",bm.bmWidth,bm.bmHeight);
      return 0;
@@ -331,6 +328,7 @@ void CBattPage::Populate()
       char data[]={1,0x42,4,0x78,0};
       DataIdx=app->Monitor(this,data);
 }
+
 void CBattPage::Monitor(char *data)
 {
 
@@ -656,20 +654,17 @@ BOOL CALLBACK CPortPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 
 void CPortPage::OnRTSButton()
 {
+    int rts=app->Link->Rts();
+    if(rts < RS232_SUCCESS)
+    {
+        printf("Error Rts()\n");
+        return;
+    }
 
+    if(rts)rts=0;
+    else rts=1;
 
-
-     int rts=app->Link->Rts();
-     if(rts < RS232_SUCCESS)
-     {
-         printf("Error Rts()\n");
-         return;
-     }
-
-     if(rts)rts=0;
-     else rts=1;
-
-     app->Link->Rts(rts);
+    app->Link->Rts(rts);
 
 
 }
