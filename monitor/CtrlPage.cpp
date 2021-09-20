@@ -66,6 +66,8 @@ BOOL CTabCtrl::SetTabControlImageList()
     }
     FreeLibrary(hLib);
     TabCtrl_SetImageList(hTabCtrl, hImages);
+
+    return TRUE;
 }
 
 
