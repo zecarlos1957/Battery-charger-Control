@@ -697,19 +697,19 @@ static string DisplayChar( int val ) {
 
 int Win32Port::FormatDebugOutput( char *buffer, int line_number )
 {
-    char *StopBits[ 4 ] = {
+    LPCSTR StopBits[ 4 ] = {
         "1",
         "1.5",
         "2",
         "???"
     };
-    char *DtrControl[ 4 ] = {
+    LPCSTR DtrControl[ 4 ] = {
         "DISABLE",
         "ENABLE",
         "HANDSHAKE",
         "???"
     };
-    char *RtsControl[ 4 ] = {
+    LPCSTR RtsControl[ 4 ] = {
         "DISABLE",
         "ENABLE",
         "HANDSHAKE",
@@ -723,10 +723,10 @@ int Win32Port::FormatDebugOutput( char *buffer, int line_number )
     case 0 :
         sprintf( buffer,
                  "DCB-> Baud: %6d  "
-                 "fBinary: %1d  "
-                 "fParity: %1d  "
-                 "fOutxCtsFlow: %1d  "
-                 "fOutxDsrFlow: %1d",
+                 "fBinary: %1ld  "
+                 "fParity: %1ld  "
+                 "fOutxCtsFlow: %1ld  "
+                 "fOutxDsrFlow: %1ld",
                  m_Dcb.BaudRate,
                  m_Dcb.fBinary,
                  m_Dcb.fParity,
@@ -736,18 +736,18 @@ int Win32Port::FormatDebugOutput( char *buffer, int line_number )
     case 1 :
         sprintf( buffer,
                  "DCB-> fDtrControl: %9s  "
-                 "fDsrSensitivity: %1d  "
-                 "fTXContinueOnXoff: %1d  ",
+                 "fDsrSensitivity: %1ld  "
+                 "fTXContinueOnXoff: %1ld  ",
                  DtrControl[ m_Dcb.fDtrControl ],
                  m_Dcb.fDsrSensitivity,
                  m_Dcb.fTXContinueOnXoff );
         break;
     case 2 :
         sprintf( buffer,
-                 "DCB-> fOutX: %1d  "
-                 "fInX: %1d  "
-                 "fErrorChar: %1d  "
-                 "fNull: %1d  "
+                 "DCB-> fOutX: %1ld  "
+                 "fInX: %1ld  "
+                 "fErrorChar: %1ld  "
+                 "fNull: %1ld  "
                  "fRtsControl: %9s",
                  m_Dcb.fOutX,
                  m_Dcb.fInX,
@@ -757,10 +757,10 @@ int Win32Port::FormatDebugOutput( char *buffer, int line_number )
         break;
     case 3 :
         sprintf( buffer,
-                 "DCB-> fAbortOnError: %1d  "
+                 "DCB-> fAbortOnError: %1ld  "
                  "XonLim: %4d  "
                  "XoffLim: %4d  "
-                 "ByteSize: %1d  "
+                 "ByteSize: %1ld  "
                  "Parity: %1c ",
                  m_Dcb.fAbortOnError,
                  m_Dcb.XonLim,
