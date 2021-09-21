@@ -227,7 +227,7 @@ public:
 };
 
 
-
+extern App* app;
 
 
 class CMonitorPage:public TabPage

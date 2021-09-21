@@ -17,324 +17,194 @@
 
 
 
-Connection::Connection(HWND hwnd, char *port):hWnd(hwnd),
-                                              hPort(NULL),
-                                              hEvent(NULL)
+Connection::Connection(HWND hwnd, std::string &port):Win32Port(port, CBR_9600, NOPARITY, 8, ONESTOPBIT, ENABLE,DISABLE),
+                                                     OnLine(FALSE),
+                                                     mode(0),
+                                                     hWnd(hwnd)
 {
 
-     FillMemory(RxBuffer,16,0);
 
-     lstrcpy(PortName,port);
-
-     if(OpenSerial(PortName))   /// Open last serial com port
-     {
-
-        SetCommMask(hPort,EV_RXCHAR);
-        hEvent= CreateEvent(NULL, FALSE, FALSE, "rs");
-
-        if( hEvent == NULL)
-        {
-           printf("Err CreateEvent()");
-           CloseHandle(hPort);
-           return;
-        }
-   //     OpenEvent(SYNCHRONIZE, FALSE, "rs");
-
-    }
-
+    lstrcpy(PortName,port.c_str());
+    if(error_status) 
+        DisplayLastError("Connectio::");
 }
-
 
 Connection::~Connection()
 {
-
-    if(hEvent)CloseHandle(hEvent);
-    if(hPort)CloseHandle(hPort);
-    hPort = hEvent = NULL;
-
- }
-
-BOOL Connection::IsConnected()
-{
-     DWORD status;
-      GetCommModemStatus(hPort,&status);
-  //     printf("status 0x%x\n", status);
-     if(status&MS_DSR_ON) return TRUE;
-     return FALSE;
-
+    Dtr(0);
+    Rts(0);
+    SetCommMask(m_hPort,0);
 }
 
-BOOL Connection::OpenSerial(char *name)
+BOOL Connection::SendCommand(char *comd)
 {
-     FlowControl fc = NoFlowControl;
-    hPort=CreateFile(name, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
-    if(hPort == INVALID_HANDLE_VALUE) return FALSE;
-
-
-     DCB dcb;
-      printf("Open %s Success\n",name);
-        GetCommState(hPort,&dcb);
-          dcb.DCBlength = sizeof(DCB);
-          dcb.BaudRate = CBR_9600;
-          dcb.ByteSize = 8;
-          dcb.StopBits = ONESTOPBIT;
-          dcb.Parity   = NOPARITY;
-       //   if(dcb.fParity  == FALSE)
-          dcb.Parity = 'N';
-          dcb.fAbortOnError = TRUE;
- //          cfg.fOutxDsrFlow = FALSE;            //   DCE:  permission ok
- //         cfg.fOutxCtsFlow = FALSE;            //   DCE:  permission ok
- //          dcb.fDsrSensitivity = FALSE;
- //          dcb.fDtrControl = DTR_CONTROL_ENABLE;
-//          dcb.fRtsControl = RTS_CONTROL_DISABLE;
-
-
-     switch (fc)
-     {
-          case NoFlowControl:
-          {
-
-               dcb.fOutxCtsFlow = FALSE;
-               dcb.fOutxDsrFlow = FALSE;
-               dcb.fOutX = FALSE;
-               dcb.fInX = FALSE;
-               break;
-          }
-          case CtsRtsFlowControl:
-          {
-               dcb.fOutxCtsFlow =  TRUE;
-               dcb.fOutxDsrFlow = FALSE;
-               dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-               dcb.fOutX = FALSE;
-               dcb.fInX = FALSE;
-               break;
-          }
-          case CtsDtrFlowControl:
-          {
-               dcb.fOutxCtsFlow = TRUE;
-               dcb.fOutxDsrFlow = FALSE;
-               dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
-               dcb.fOutX = FALSE;
-               dcb.fInX = FALSE;
-               break;
-          }
-          case DsrRtsFlowControl:
-          {
-               dcb.fOutxCtsFlow = FALSE;
-               dcb.fOutxDsrFlow = TRUE;
-               dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-               dcb.fOutX = FALSE;
-               dcb.fInX = FALSE;
-               break;
-          }
-          case DsrDtrFlowControl:
-          {
-               dcb.fOutxCtsFlow = FALSE;
-               dcb.fOutxDsrFlow = TRUE;
-               dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
-               dcb.fOutX = FALSE;
-               dcb.fInX = FALSE;
-               break;
-          }
-     }
-
-
-        printf("%s: BaundRate %d ",name, dcb.BaudRate);
-        printf("%d Bits ", dcb.ByteSize);
-        printf("%d StopBit ",(dcb.StopBits==ONESTOPBIT? 1:2) );
-       printf("%s\n",(dcb.Parity==EVENPARITY ? "EvenParity":
-                      dcb.Parity==ODDPARITY  ? "OddParity":
-                      dcb.Parity==MARKPARITY ? "MarkParity":
-                      dcb.Parity==SPACEPARITY? "SpaceParity":"NoParity"));
-/*
-        printf("Dtr %d Rts %d XonXoff %d CtsFlow %d DsrFlow %d\n",
-                dcb.fDtrControl,dcb.fRtsControl,
-                dcb.fOutX, dcb.fOutxCtsFlow, dcb.fOutxDsrFlow);
-*/
-        SetCommState(hPort,&dcb);
-
-
-
-       COMMTIMEOUTS TimeOut={0x01,0,0,0,0};
-        SetCommTimeouts(hPort,&TimeOut);
-
-
-
-      return TRUE;
-}
-
-
-
-
-DWORD Connection::ReadDevice(int cmdLen)
-{
-     BYTE data;
-     DWORD sz,len;
-     DWORD err;
-     DWORD event;
-     COMSTAT stat;
-     char msg[256];
-     char str[50];
-     DCB dcb;
-     sz=0;
-     OVERLAPPED Overlapp={0};
-     Overlapp.hEvent=hEvent;
-
-     if(WaitCommEvent(hPort, &event, &Overlapp) == NULL)
-     {
-         if((err = GetLastError()) && err != ERROR_IO_PENDING)
-         {
-             DisplayLastError("Reading Port",err);
-             return 0;
-         }
-         GetOverlappedResult( hPort, &Overlapp, &sz,TRUE);
-     }
-     if(event == EV_RXCHAR)  /// 15 ms to get eco
-     {
-
-        if(!ReadFile(hPort, RxBuffer, cmdLen, &sz, &Overlapp))
-        {
-            if((err = GetLastError()) && err != ERROR_IO_PENDING)
-            {
-                DisplayLastError("Reading Port",err);
-                return 0;
-            }
-            GetOverlappedResult( hPort, &Overlapp, &sz,TRUE);
-        }
-     }
-     return sz;
-}
-
-
-
-BOOL Connection::SendCommand1 (char *comd)
-{
-     DWORD event,sz;
-    DWORD err=0;
-    OVERLAPPED Overlapp = {0 };
-    Overlapp.hEvent=hEvent;
-    int FrameSize=5;
-    int n=0;
-    char data,Old;
-     BOOL Waiting=FALSE;
-    if(hPort == NULL)return FALSE;
-    Old=0;
-  //   while(n<FrameSize)
-     {
-
-
-              if(!WriteFile( hPort,  &comd[n], 5, &sz,&Overlapp ))
-             {
-                 if((err = GetLastError()) && err != ERROR_IO_PENDING)
-                 {
-                     DisplayLastError("Writing to hPort",err);
-                     return FALSE;
-                 }
-
-                 if(!GetOverlappedResult (hPort,&Overlapp,&sz,TRUE))
-                 {
-                    DisplayLastError("Writing to hPort",err);
-                     return FALSE;
-                 }
-             }
-              Waiting=TRUE;
-
-    }
-     return TRUE;
-}
-
-BOOL Connection::SendCommand (char *comd)
-{
-    DWORD event,sz;
-    DWORD err=0;
-    OVERLAPPED Overlapp = {0 };
-    Overlapp.hEvent=hEvent;
-    int FrameSize=5;
-    int n=0;
-    char data,Old;
-     BOOL Waiting=FALSE;
-    if(hPort == NULL)return FALSE;
-    Old=0;
-
- //   printf("Eco_SendFrame ");
-    while(n<FrameSize)
-     {
-         if( Waiting == FALSE)
-         {
-              if(!WriteFile( hPort,  &comd[n], 1, &sz,&Overlapp ))
-             {
-                 if((err = GetLastError()) && err != ERROR_IO_PENDING)
-                 {
-                     DisplayLastError("Writing to hPort",err);
-                     return FALSE;
-                 }
-
-                 if(!GetOverlappedResult (hPort,&Overlapp,&sz,TRUE))
-                 {
-                    DisplayLastError("Writing to hPort",err);
-                     return FALSE;
-                 }
-             }
-              Waiting=TRUE;
-         }
-         /// Wait for eco
-         WaitCommEvent(hPort, &event, &Overlapp);
-
-         if(event == EV_RXCHAR)  /// 15 ms to get eco
-         {
-     //        ResetEvent(hEvent);
-              if(!ReadFile(hPort, &data, 1, &sz, &Overlapp))
-              {
-                  if((err = GetLastError()) && err == ERROR_IO_PENDING)
-                       GetOverlappedResult( hPort, &Overlapp, &sz,TRUE);
-                  else if(err)
-                  {
-                      DisplayLastError("Reading Port",err);
-                      return FALSE;
-                  }
-              }
-              Old |= comd[n]-data;
-
-               n++;
-               Waiting=FALSE;
-        }  // if(event == EV_RXCHAR)
-     } // for(
- //    printf("\n");
-    if(Old)
+    if(write_buffer(comd, 5) != RS232_SUCCESS)
     {
- //       MessageBox(0,"Erro de comunicação","Frame Erro",MB_OK|MB_ICONEXCLAMATION);
-
+        DisplayLastError("WritePort");
         return FALSE;
     }
-
     return TRUE;
 }
 
 BOOL Connection::SendData(int len, char *data)
 {
-     OVERLAPPED Overlapp = {0 };
-    Overlapp.hEvent=hEvent;
-    DWORD sz,err;
-    if(hPort == NULL)return FALSE;
-    int n=0;
-    while(n<len)
-     {
-         if(!WriteFile( hPort,  &data[n], 1, &sz,&Overlapp ))
-        {
-           if((err = GetLastError()) && err != ERROR_IO_PENDING)
-            {
-                   DisplayLastError("Writing to hPort",err);
-                    return FALSE;
-            }
+    CopyMemory(&FrameData[5],data,len);
 
-             if(!GetOverlappedResult (hPort,&Overlapp,&sz,TRUE))
-            {
-                    DisplayLastError("Writing to hPort",err);
-                     return FALSE;
-            }
-        }
-        n++;
-     }
+   return TRUE;
+}
+
+
+void Connection::DsrNotify(bool status)
+{
+      OnLine=status;
+      printf("%s\n", OnLine?"OnLine":"OffLine");
+}
+
+void Connection::CtsNotify( bool status )
+{
+       DWORD error;
+     /**
+           CTS Hi == disable  CTS low == Enable
+     */
+
+  //   if(*(DWORD*)FrameData==0xbd91405)
+  //          printf("Enable Monitor\n");// Dtr(1);
+
+
+     printf("%s\n",status==false?"CTS_CONTROL_ENABLE":"CTS_CONTROL_DISABLE");
+ //printf(" cmd 0x%x adr 0x%x len 0x%x :",FrameData[1],FrameData[2],len  );
+
+
+
+      if(status == false || (FrameData[1]&0x10) == 0) return;
+
+ /// if (CTS is disable(true) and cmd==WRITE_MEM(0x01)) send data now.
+
+      error=write_buffer(&FrameData[5],FrameData[3]);
+      if(error != RS232_SUCCESS)
+      {
+          DisplayLastError("WritePort");
+      }
+
+ //     printf(" Frame_Data 0x%x 0x%x 0x%x data:",FrameData[1]&0xff,FrameData[2]&0xff,FrameData[3]&0xff );
+      printf("Frame_Data: ");
+      for(int n=0;n<FrameData[3];n++)
+          printf("0x%x ", FrameData[5+n] );
+
+     printf("\n");
+
+
+}
+
+void Connection::TxNotify( )
+{
+      DWORD error;
+      if( FrameData[0]==0) return;
+
+     if(!IsConnected() )
+      {
+
+          return;
+      }
+      printf("Frame_Cmd 0x%x 0x%x 0x%x 0x%x \n",FrameData[0]&0xff, FrameData[1]&0xff, FrameData[2]&0xff, FrameData[3]&0xff  );
+
+
+
+}
+
+void Connection::RxNotify( int byte_count )
+{
+    if(byte_count>60)
+    {
+        printf("RX:byte_count == %d !!!\n",byte_count);
+       byte_count=60;
+    }
+
+    char data;
+    static int idx=0;
+    unsigned char ChkSum=0;
+    static DWORD CmdMsg=0;
+
+
+
+    if(CmdMsg == 0)
+    {
+        CmdMsg = *((DWORD*)&FrameData[0]);
+
+    }
+
+    read_buffer(FrameData+idx, byte_count );
+    idx+=byte_count;
+
+    if(FrameData[0] == 0xffffffaa )
+    {
+        CmdMsg=((app->GetMonLen()+1)<<24)|0xaa;
+    }
+
+    /** if is not a complete frame return */
+    if(idx < (CmdMsg>>24)+1)return;
+
+    if(idx > (CmdMsg>>24)+1)idx=(CmdMsg>>24);
+
+    if((CmdMsg&0xff) != 0xaa)
+        printf("0x%x data ", CmdMsg) ;
+
+    for(int i=0;i<idx-1;i++)
+    {
+        ChkSum += (FrameData[i]&0xff);
+    }
+    if(ChkSum != (FrameData[idx-1]&0xff))
+        printf("CheckSum Error\n");
+
+    if((CmdMsg&0xff) != 0xaa)
+    {
+        for(int i=0;i<idx;i++)
+       {
+           printf("0x%x ", (FrameData[i]&0xff));
+       }
+       printf("\n");
+    }
+    if((CmdMsg&0xff)==0xaa)
+        CmdMsg=0xaa;
+
+/*
+
+      SYSTEMTIME t;
+     GetLocalTime(&t);
+       printf("%d:%d\n",t.wSecond,t.wMilliseconds );
+*/
+
+       PostMessage(app->GetHandle(),EV_DEVICE_MSG,(WPARAM)CmdMsg,(LPARAM)FrameData);
+
+     idx=0;
+    CmdMsg=0;
+
+}
+
+
+
+char *  Connection::BuildCmd(char cmd, char memTyp, char addr,char len)
+{
+
+
+     cmd    = cmd&0xf0;
+     memTyp = memTyp&0x0c;
+     char bank   = 0; /// bank23 -> cmd bit 0 + addr bit 7 bank01
+
+
+     FrameData [0] = 5;
+     FrameData [1] = cmd | memTyp | bank ;
+     FrameData [2] = addr;
+     FrameData [3] = len;
+     FrameData [4] = cmd ^ memTyp ^ bank ^ addr ^ len;
+
+ //   printf("frame 0x%x 0x%x 0x%x 0x%x 0x%x\n",FrameData [0]&0xff,FrameData [1]&0xff,FrameData [2]&0xff,FrameData [3]&0xff,FrameData [4]&0xff);
+     return FrameData;
+}
+
+bool Connection::IsConnected()
+{//DSR status
+   return OnLine;
 }
 
 
