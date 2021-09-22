@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 #include "resource.h"
-#include "RingBuffer.hpp"
+#include "RingBuffer.h"
 
 
 #include <string>

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "RingBuffer.hpp"
+#include "RingBuffer.h"
 
 extern HINSTANCE hInst;
 extern App *app;
