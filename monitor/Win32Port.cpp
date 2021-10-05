@@ -163,7 +163,6 @@ Win32Port::Win32Port( const string &port,
         SetupComm( m_hPort, 500, 500 ); //set buffer sizes
         error_status = RS232_SUCCESS;     //clear current class error
 
-
 // DCB is ready for use.
 
 // Couldn't build the DCB. Usually a problem
@@ -192,7 +191,6 @@ Win32Port::Win32Port( const string &port,
         //
 
         error_status = write_settings();
-
 
         if ( error_status != RS232_SUCCESS ) {
             CloseHandle( m_hPort );
@@ -864,15 +862,15 @@ int Win32Port::write_byte( int c )
 }
 
 //
-// write_buffer() is another one of the virtual routines that is declared
-// by RS232, the base class, as pure virtual. That means it is our
-// responsibility to implement it as best we can in this derived class.
-// Writing data to our device is easy, we just have to load it into
-// the output queue and set the event that wakes him up. The actual
-// number of bytes transferred to the output thread is passed back in
-// member ByteCount. If not all bytes could fit in the output buffer,
-// the non-fatal warning message RS232_TIMEOUT is passed back to
-// the caller.
+/// write_buffer() is another one of the virtual routines that is declared
+/// by RS232, the base class, as pure virtual. That means it is our
+/// responsibility to implement it as best we can in this derived class.
+/// Writing data to our device is easy, we just have to load it into
+/// the output queue and set the event that wakes him up. The actual
+/// number of bytes transferred to the output thread is passed back in
+/// member ByteCount. If not all bytes could fit in the output buffer,
+/// the non-fatal warning message RS232_TIMEOUT is passed back to
+/// the caller.
 //
 
 int Win32Port::write_buffer( char *buffer, unsigned int count )
@@ -1434,11 +1432,11 @@ void Win32Port::OutputThread(void * arglist)
     // ofthe port's structure.
     //
     Win32Port *port = (Win32Port *) arglist;
-    // The array of handles I wait for in the main loop has one
-    // fewer element than the same array in the input thread.
-    // We're only waiting for three things here: a request to send
-    // more data via WriteFile(), a request to kill the thread, or
-    // a request to send a break.
+    /// The array of handles I wait for in the main loop has one
+    /// fewer element than the same array in the input thread.
+    /// We're only waiting for three things here: a request to send
+    /// more data via WriteFile(), a request to kill the thread, or
+    /// a request to send a break.
     HANDLE handles[ 3 ] = { port->m_hKillOutputThreadEvent,
                             port->m_hWriteRequestEvent,
                             port->m_hBreakRequestEvent };

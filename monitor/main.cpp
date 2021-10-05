@@ -135,10 +135,9 @@ App::App(HWND hwnd):hwnd(hwnd),
 
     std::string portList;
     DWORD numPort = GetAvailablePorts(&portList);
+
     if(numPort)
         Link = new Connection(hwnd, portList);    /// Open last serial com port
-
-
 
     TabCtrl = new  CTabCtrl(hwnd);
     TabCtrl->Insert(new CMonitorPage(TabCtrl,"Monitor"));
@@ -151,41 +150,39 @@ App::App(HWND hwnd):hwnd(hwnd),
     {
         char *frame=Link->BuildCmd(READ_MEM, EEPROM, 0x00, 6);
         PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
-
     }
-    else printf("O dispositivo não foi localizado.\nO cabo poderá estar desligado.");
+    else printf("Falha ao abrir a porta %s\n.", portList.c_str());
 
 }
 
 App::~App()
 {
-      if(Link)delete Link;
-     delete TabCtrl;
-     UnregisterDeviceNotification(hDevNotify);
-/**
-   guardar ComPort, RefreshRate
-*/
+    if(Link)delete Link;
+    delete TabCtrl;
+    UnregisterDeviceNotification(hDevNotify);
+
  }
 
+/**
+    Add a TDataRequest structure to DataRequest list
+*/ 
 
 short App::ReadDeviceData(HWND hwnd,  char addr, char sz)
 {
-    short val=0;
-     int idx=0;
-    if(Link->IsConnected() == FALSE)
+    if (Link->IsConnected() == FALSE)
     {
-        MessageBox(App::hwnd,"O equipamento está OffLine","Erro",MB_OK|MB_ICONEXCLAMATION);
-        return 0;
+         MessageBox(App::hwnd, "O equipamento está OffLine", "Erro", MB_OK|MB_ICONEXCLAMATION);
+         return 0;
     }
-     if(ReqIdx>60)
-     {
+    if (ReqIdx > 60)
+    {
          printf("!!!!ReqIdx exced 60\n");
          return 0;
-     }
+    }
 
-     DataRequest[ReqIdx++]= new TDataRequest(hwnd,addr,sz);
+    DataRequest[ReqIdx++] = new TDataRequest(hwnd, addr, sz);
 
-       return val;
+    return 1;
 }
 
 
@@ -262,6 +259,7 @@ LRESULT App::TimeOver()
     sprintf(msg+lstrlen(msg), "A aplicação iniciará em modo offline.");
 
      MessageBox( hwnd, msg, "Aviso", MB_OK|MB_ICONWARNING);
+    return FALSE;
 }
 
 LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
@@ -391,21 +389,19 @@ printf("SetFlag %x ",(flags%0x04));
 
 LRESULT App::OnDataRequest(WPARAM wParam, LPARAM lParam)
 {
-       unsigned long t1=GetTickCount();
+    unsigned long t1 = GetTickCount();
 
-     while(!Link->IsConnected())
-           if(GetTickCount()-t1>WAIT_T*4)
-           {
-               TimeOver();
-               return 0;
-           }
-     t1=WAIT_T;
-     while(t1--);
-
-      char *frame=(char*)lParam;//Link->BuildCmd(READ_MEM, EEPROM, 0x00, 6);
-      Link->SendCommand(frame);
-
-
+    while(!Link->IsConnected())
+    {
+        if (GetTickCount() - t1 > WAIT_T * 4)
+        {
+            TimeOver();
+            return FALSE;
+        }
+    }
+    char *frame = (char*)lParam;
+    Link->SendCommand(frame);
+    return TRUE;
 }
 
 
@@ -413,76 +409,70 @@ LRESULT App::OnDataRequest(WPARAM wParam, LPARAM lParam)
 LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 {
 
-     switch(wParam)
-     {
-           case 0x6000805:   /// GetDeviceName
-              {
-                CopyMemory(DeviceName,(const void*)lParam,6);
-   //             if(memcmp((const void*)DeviceName,"AZA",3))
-   //                return 0;
-                Initialized=true;
+    switch(wParam)
+    {
+         case 0x6000805:   /// GetDeviceName
+         {
+              CopyMemory(DeviceName,(const void*)lParam,6);
+              if(memcmp((const void*)DeviceName,"AZA",3))
+                   return 0;
 
-                TabCtrl->Populate();
+              Initialized = true;
 
+              TabCtrl->Populate();
 
-     //            ReadDeviceData( hwnd,0x45, 1);
+              PostMessage(hwnd,EV_APP_INIT,0,0);
 
-
-                PostMessage(hwnd,EV_APP_INIT,0,0);
-
-                return 1;
-              }
-           case 0x01450405:   /// GetFlags
-                {
-                    AFlags = *(char*)lParam;
+              return 1;
+         }
+         case 0x01450405:   /// GetFlags
+         {
+              AFlags = *(char*)lParam;
             //        char flags =(~AFlags)&0x04;       /// bit 2  0 -> CHARGE_OFF  1 -> CHARGE_ON
             //        flags = flags |(AFlags&0xfb);
-
-                }
-                return 1;
-           case  0xaa:        /// Monitor
-                Refresh(((char*)lParam+1));
-                break;
-           default:          /// Request memory access
-                {
-                    char str[128];
-                    char tmp[32];
-                    str[0] = '\0';
-                    int n = wParam >> 24;
+              return 1;
+         }
+         case  0xaa:        /// Monitor
+              Refresh(((char*)lParam+1));
+              break;
+         default:          /// Request memory access
+         {
+              char str[128];
+              char tmp[32];
+              str[0] = '\0';
+              int n = wParam >> 24;
         //             printf("msg 0x%x : ",wParam);
-                     if(((wParam>>8)&0xf0) == READ_MEM)
-                    {
-                        char *ptr=(char*)lParam;
-                        for(int i=0;i<n;i++)
-                        {
-                            sprintf(str+i*2,"0x%.2x ",(*(ptr+i))&0xff);
+              if(((wParam>>8)&0xf0) == READ_MEM)
+              {
+                   char *ptr=(char*)lParam;
+                   for(int i=0;i<n;i++)
+                   {
+                       sprintf(str+i*2,"0x%.2x ",(*(ptr+i))&0xff);
   //                          printf("%s ",str);
-                        }
+                   }
 
 
+                   HWND Hwnd = GetActiveWindow();
+                   if(Hwnd != hwnd)  /// Request from Memory access dialog
+                   {
+                        int i;
+                        i=SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_GETCURSEL,0,0);
+                        SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_SETSEL,FALSE,i);
+                        i=SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_ADDSTRING,0,(LPARAM)str);
+                        SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_SETSEL,TRUE,(LPARAM)i);
+                   }
+                   else             /// Request from App::ReadDeviceData
+                   {
+                        SendMessage(DataRequest[ReqIdx]->hwnd, EV_DATA_REQUEST,wParam,lParam);
+                        delete DataRequest[ReqIdx];
+                        int t1=WAIT_T*6;
+                        while(t1--);
 
-                        HWND Hwnd = GetActiveWindow();
-                        if(Hwnd != hwnd)  /// Request from Memory access dialog
-                        {
-                            int i;
-                            i=SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_GETCURSEL,0,0);
-                            SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_SETSEL,FALSE,i);
-                            i=SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_ADDSTRING,0,(LPARAM)str);
-                            SendDlgItemMessage(Hwnd,IDC_LISTDATA,LB_SETSEL,TRUE,(LPARAM)i);
-                        }
-                        else             /// Request from App::ReadDeviceData
-                        {
-
-                            SendMessage(DataRequest[ReqIdx]->hwnd, EV_DATA_REQUEST,wParam,lParam);
-                            delete DataRequest[ReqIdx];
-                             int t1=WAIT_T*6;
-                               while(t1--);
-
-                                PostMessage(hwnd,EV_APP_INIT,0,0);
-                        }
-                    }
-               }
-                break;
+                        PostMessage(hwnd,EV_APP_INIT,0,0);
+                   }
+              }
+         }
+         break;
      }
      return 0;
 }

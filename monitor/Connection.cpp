@@ -22,8 +22,6 @@ Connection::Connection(HWND hwnd, std::string &port):Win32Port(port, CBR_9600, N
                                                      mode(0),
                                                      hWnd(hwnd)
 {
-
-
     lstrcpy(PortName,port.c_str());
     if(error_status) 
         DisplayLastError("Connectio::");
