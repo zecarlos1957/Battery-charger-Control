@@ -39,9 +39,9 @@ CTabCtrl::CTabCtrl(HWND hParent): nTab(0)
 
 CTabCtrl::~CTabCtrl()
 {
-     HIMAGELIST hImages = reinterpret_cast<HIMAGELIST>(SendMessage(hTabCtrl,TCM_GETIMAGELIST,0,0));
+    HIMAGELIST hImages = reinterpret_cast<HIMAGELIST>(SendMessage(hTabCtrl,TCM_GETIMAGELIST,0,0));
 
-     ImageList_Destroy(hImages);
+    ImageList_Destroy(hImages);
 }
 
 BOOL CTabCtrl::SetTabControlImageList()
@@ -73,26 +73,26 @@ BOOL CTabCtrl::SetTabControlImageList()
 
 HWND CTabCtrl::Insert(TabPage *page)
 {
-     TCITEM tie={0};
-     int i;
-     if(nTab == MAX_TABPAGE  )
-     {
+    TCITEM tie={0};
+    int i;
+    if(nTab == MAX_TABPAGE)
+    {
         MessageBox(NULL, "Couldn't add Tab. (Full) ",page->GetName(), MB_OK | MB_ICONERROR);
         return NULL;
-     }
+    }
 
-     tie.mask = TCIF_TEXT|TCIF_IMAGE;
-     tie.pszText = page->GetName();
-     tie.cchTextMax=lstrlen(page->GetName()+1);
-     tie.iImage=nTab;
-     if((i=TabCtrl_InsertItem(hTabCtrl,nTab,&tie)) == -1)
-     {
-         DestroyWindow(hTabCtrl);
-        MessageBox(NULL, "Couldn't add Tab ",page->GetName(), MB_OK | MB_ICONERROR);
+    tie.mask = TCIF_TEXT|TCIF_IMAGE;
+    tie.pszText = page->GetName();
+    tie.cchTextMax = lstrlen(page->GetName() + 1);
+    tie.iImage = nTab;
+    if((i = TabCtrl_InsertItem(hTabCtrl,nTab,&tie)) == -1)
+    {
+        DestroyWindow(hTabCtrl);
+        MessageBox(NULL, "Couldn't add Tab ", page->GetName(), MB_OK | MB_ICONERROR);
         return NULL;
-     }
+    }
 
-     Page[nTab++] = page;
+    Page[nTab++] = page;
 
     return page->GetHwnd();
 }
@@ -100,47 +100,31 @@ HWND CTabCtrl::Insert(TabPage *page)
 LRESULT CTabCtrl::OnNotify(WPARAM wParam,LPARAM lParam)
 {
        // get the tab message from lParam
-       LPNMHDR lpnmhdr = (LPNMHDR)lParam;
-       if (lpnmhdr->code == TCN_SELCHANGING)
-       {
-           int iPage = TabCtrl_GetCurSel(hTabCtrl);
-           CurrPage = Page[iPage];
-       }
+    LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+    if (lpnmhdr->code == TCN_SELCHANGING)
+    {
+        int iPage = TabCtrl_GetCurSel(hTabCtrl);
+        CurrPage = Page[iPage];
+    }
 
-       if (lpnmhdr->code == TCN_SELCHANGE)
-       {
+    if (lpnmhdr->code == TCN_SELCHANGE)
+    {
 
-           int iPage = TabCtrl_GetCurSel(hTabCtrl);
+        int iPage = TabCtrl_GetCurSel(hTabCtrl);
 
-           ShowWindow(CurrPage->GetHwnd(), SW_HIDE);  // first hide tab view 2
-           ShowWindow(Page[iPage]->GetHwnd(), SW_SHOWNORMAL);
+        ShowWindow(CurrPage->GetHwnd(), SW_HIDE);  // first hide tab view 2
+        ShowWindow(Page[iPage]->GetHwnd(), SW_SHOWNORMAL);
 
-      }
+    }
     return 0;
 }
 
-
-/*
-void CTabCtrl::SetPage(int i)
-{
-     if(i < MAX_TABPAGE)
-    {
-         int n=TabCtrl_GetCurPage();
-         ShowWindow(Page[n]->GetHwnd(),SW_HIDE);
-         TabCtrl_SetCurSel(hTabCtrl,i);
-        CurrPage=Page[i];
-        ShowWindow(Page[i]->GetHwnd(),SW_SHOW);
-    }
-
-}
-*/
-
 void CTabCtrl::Populate()
 {
-     for(int i = 0; i < nTab; i++)
-     {
-         Page[i]->Populate();
-     }
+    for(int i = 0; i < nTab; i++)
+    {
+        Page[i]->Populate();
+    }
 }
 
 ///*****************************************************
@@ -169,44 +153,50 @@ TabPage::~TabPage()
 
 }
 
-void TabPage::Translate(char *data, AD_Value Func,char sz, char *t,DWORD ID_VAL)
+void TabPage::Translate(char *data, AD_Value Func, char sz, char *t, DWORD ID_VAL)
 {
-     char str[32];
-     DWORD AD;
-     switch(sz)
-     {
-         case 1: AD = *data;break;
-         case 2: AD = *(short*)data;break;
-         case 4: AD = *(DWORD*)data;break;
-     }
-     double val;
-     if(Func)
-     {
-         val = Func(AD);
-         sprintf(str,"%f",val);
-     }
-     else
-     {
-         sprintf(str,"%d",AD);
-     }
-     char *ptr = str;
-     int digit;
+    char str[32];
+    DWORD AD;
+    switch(sz)
+    {
+        case 1:
+            AD = *data;
+            break;
+        case 2:
+            AD = *(short*)data;
+            break;
+        case 4:
+            AD = *(DWORD*)data;
+            break;
+    }
+    double val;
+    if (Func)
+    {
+        val = Func(AD);
+        sprintf(str, "%f", val);
+    }
+    else
+    {
+        sprintf(str, "%d", AD);
+    }
+    char *ptr = str;
+    int digit;
 
-         if(*t == 'A') digit=4; else digit=3;
-         while(*ptr)
-         {
-             if(*ptr=='.')
-             {
-                  ptr+=digit;
-                 *ptr = '\0';
-                  break;
-             }
-             ptr++;
-         }
-         sprintf(ptr," %s",t);
+    if(*t == 'A') digit = 4; else digit = 3;
+    while (*ptr)
+    {
+        if(*ptr == '.')
+        {
+            ptr += digit;
+            *ptr = '\0';
+            break;
+        }
+        ptr++;
+    }
+    sprintf(ptr, " %s", t);
 
-     if(ID_VAL)
-         SendDlgItemMessage(hWnd, ID_VAL, WM_SETTEXT, 0,(LPARAM)str);
+    if (ID_VAL)
+        SendDlgItemMessage(hWnd, ID_VAL, WM_SETTEXT, 0, (LPARAM)str);
 
 }
 

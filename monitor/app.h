@@ -69,7 +69,6 @@ void DisplayLastError(char * Operation,DWORD error=0);
 VOID CALLBACK  OnMonitor( HWND hwnd, UINT uMsg,	 UINT idEvent, DWORD dwTime  );
 BOOL CALLBACK MessageProc(HWND hwnd , UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK UserDataProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK ConfigProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK BuildGraph(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK  WinGraphProc(HWND Hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK  GraphProc(HWND Hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -178,7 +177,7 @@ typedef struct  TDataRequest
 
 class App
 {
-     int mIndex;
+     int mPageIndex;
     HANDLE ThreadHandle;
       HWND hwnd;
       void CreateMainMenu();
@@ -218,7 +217,7 @@ public:
       char GetMonLen();
       HWND GetHandle(){return hwnd;}
       short ReadDeviceData(HWND u1, char addr, char sz);
-      DWORD Monitor( TabPage *page,char *addr);
+      DWORD AddDataMonitor( TabPage *page,char *addr);
       void SetMonitor(HWND);
       void SetRefreshRate(short r);
       void Refresh(char *data);

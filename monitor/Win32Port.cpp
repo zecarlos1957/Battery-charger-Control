@@ -1038,8 +1038,8 @@ RS232Error Win32Port::write_settings()
  /// *******************
 
 
-    if(SetCommState( m_hPort, &m_Dcb )==0)
-       DisplayLastError("SetCommState()",0);
+    SetCommState( m_hPort, &m_Dcb );
+
     if ( GetLastError() != 0 ) {
         if ( GetLastError() == ERROR_INVALID_HANDLE )
             return (RS232Error) WIN32_SETTINGS_FAILURE;
@@ -1611,11 +1611,11 @@ void Win32Port::check_modem_status(bool first_time, DWORD event_mask )
     //
     // There shouldn't be anything to prevent us from reading
     // the input lines. If an error occurs, it is bad.
-    ///
+
     if ( !GetCommModemStatus( m_hPort, &m_dwModemStatus ) )
     {
-           DisplayLastError("Comm");
-            assert( false );
+           // assert( false );
+           return;
     }
     //
     // The first_time flag is set one time when this guy is

@@ -36,7 +36,7 @@
 #define CCPR1L 0x15
 #define CCP1CON 0x17
 
-#define WAIT_T 30000
+#define WAIT_T 1000
 
 
 using namespace std;
@@ -61,31 +61,39 @@ BOOL CALLBACK MainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
         case WM_INITDIALOG:
              app = new App(hwndDlg);
              return TRUE;
+
         case WM_COMMAND:
-             app->OnCommand(wParam,lParam);
+             app->OnCommand(wParam, lParam);
              return FALSE;
+
         case WM_NOTIFY:
-             app->OnNotify(wParam,lParam);
+             app->OnNotify(wParam, lParam);
              break;
   //      case WM_TIMER:
   //           app->OnTimer();
              return 0;
+
         case EV_APP_INIT:
              app->OnInit(wParam, lParam);
              break;
+
          case EV_DEVICE_MSG:
-             if(app)app->OnDevMsg(wParam,lParam);
+             if(app)app->OnDevMsg(wParam, lParam);
              break;
+
          case EV_DATA_REQUEST:
-             if(app)app->OnDataRequest(wParam,lParam);
+             if(app)app->OnDataRequest(wParam, lParam);
              break;
+
          case WM_DEVICECHANGE:
-             if(app) app->OnDeviceChange(wParam,lParam);
+             if(app) app->OnDeviceChange(wParam, lParam);
              return TRUE;
+
         case WM_CLOSE:
              delete app;
              DestroyWindow(hwndDlg);
              return TRUE;
+
         case WM_DESTROY:
              PostQuitMessage(0);
              return FALSE;
@@ -104,15 +112,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     hInst = hInstance;
      RegisterMyClass();
     StartCommonControls(ICC_WIN95_CLASSES);
-    HWND hwnd=CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN),NULL,(DLGPROC)MainProc);
+    HWND hwnd=CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)MainProc);
 
 
     MSG msg;
-    while(GetMessage(&msg,NULL,0,0)){
+    while(GetMessage(&msg, NULL, 0, 0)){
 		if (!::IsDialogMessage (hwnd, &msg))
         {
-			::TranslateMessage (&msg);
-			::DispatchMessage (&msg);
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
         }
     }
     return 0;
@@ -122,7 +130,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 
 App::App(HWND hwnd):hwnd(hwnd),
-                    mIndex(0),
+                    mPageIndex(0),
                     ListSz(0),
                     ReqIdx(0),
                     DataRefreshRate(1000),
@@ -140,16 +148,16 @@ App::App(HWND hwnd):hwnd(hwnd),
         Link = new Connection(hwnd, portList);    /// Open last serial com port
 
     TabCtrl = new  CTabCtrl(hwnd);
-    TabCtrl->Insert(new CMonitorPage(TabCtrl,"Monitor"));
-    TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
-    TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
-    TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
-    TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
+    TabCtrl->Insert(new CMonitorPage(TabCtrl, _T("Monitor")));
+    TabCtrl->Insert(new CBattPage(TabCtrl, _T("Grupo de baterias")));
+    TabCtrl->Insert(new CPainelPage(TabCtrl, _T("Paineis solares")));
+    TabCtrl->Insert(new CPortPage(TabCtrl, _T("ComunicaÃ§Ãµes")));
+    TabCtrl->Insert(new CConfigPage(TabCtrl, _T("ConfiguraÃ§Ã£o")));
 
     if(Link && Link->IsValid())
     {
         char *frame=Link->BuildCmd(READ_MEM, EEPROM, 0x00, 6);
-        PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
+        PostMessage(hwnd, EV_DATA_REQUEST, 0, (LPARAM)frame);
     }
     else printf("Falha ao abrir a porta %s\n.", portList.c_str());
 
@@ -162,30 +170,6 @@ App::~App()
     UnregisterDeviceNotification(hDevNotify);
 
  }
-
-/**
-    Add a TDataRequest structure to DataRequest list
-*/ 
-
-short App::ReadDeviceData(HWND hwnd,  char addr, char sz)
-{
-    if (Link->IsConnected() == FALSE)
-    {
-         MessageBox(App::hwnd, "O equipamento está OffLine", "Erro", MB_OK|MB_ICONEXCLAMATION);
-         return 0;
-    }
-    if (ReqIdx > 60)
-    {
-         printf("!!!!ReqIdx exced 60\n");
-         return 0;
-    }
-
-    DataRequest[ReqIdx++] = new TDataRequest(hwnd, addr, sz);
-
-    return 1;
-}
-
-
 
 LRESULT App::OnNotify(WPARAM wParam,LPARAM lParam)
 {
@@ -221,7 +205,7 @@ LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
                      unsigned long t1=GetTickCount();
 
                       while(!Link->IsConnected())
-                            if(GetTickCount()-t1>WAIT_T*4)
+                            if(GetTickCount() - t1 > WAIT_T)
                             {
                                  TimeOver();
                                  return 0;
@@ -240,7 +224,8 @@ LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
                 else if ( DBT_DEVICEREMOVECOMPLETE == wParam)
                 {
                     delete Link;
-                    Link=NULL;
+                    Link = NULL;
+
                 }
 				break;
          }
@@ -252,11 +237,11 @@ LRESULT App::TimeOver()
 {
     char msg[256]={0};
     if(Link->GetPort() == INVALID_HANDLE_VALUE)
-        sprintf(msg, "Falhou a ligação com a porta %s.\n",Link->GetPortName());
+        sprintf(msg, "Falhou a ligaÃ§Ã£o com a porta %s.\n",Link->GetPortName());
 
-    else sprintf(msg, "O equipamento está offline ou um cabo poderá estar desligado.\nVerifique todas as ligações.\n");
+    else sprintf(msg, "O equipamento estÃ¡ offline ou um cabo poderÃ¡ estar desligado.\nVerifique todas as ligaÃ§Ãµes.\n");
 
-    sprintf(msg+lstrlen(msg), "A aplicação iniciará em modo offline.");
+    sprintf(msg+lstrlen(msg), "A aplicaÃ§Ã£o iniciarÃ¡ em modo offline.");
 
      MessageBox( hwnd, msg, "Aviso", MB_OK|MB_ICONWARNING);
     return FALSE;
@@ -393,18 +378,17 @@ LRESULT App::OnDataRequest(WPARAM wParam, LPARAM lParam)
 
     while(!Link->IsConnected())
     {
-        if (GetTickCount() - t1 > WAIT_T * 4)
+        if (GetTickCount() - t1 > WAIT_T)
         {
             TimeOver();
             return FALSE;
         }
     }
+
     char *frame = (char*)lParam;
     Link->SendCommand(frame);
     return TRUE;
 }
-
-
 
 LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 {
@@ -485,25 +469,48 @@ LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
         ReqIdx--;
         char *frame=Link->BuildCmd( READ_MEM, RAM, DataRequest[ReqIdx]->addr, DataRequest[ReqIdx]->len);
         Link->SendCommand(frame);
-
-
     }
     else
     {
-         char *frame=Link->BuildCmd( WRITE_MEM,RAM,0xd9,ListSz+1);
-         Link->SendCommand(frame);
-         Link->SendData(ListSz+1,MonList);
-          Link->Rts(ENABLE);
+        char *frame=Link->BuildCmd( WRITE_MEM, RAM, 0xd9, ListSz + 1);
+        Link->SendCommand(frame);
+        Link->SendData(ListSz + 1, MonList);
+        Link->Rts(ENABLE);
     }
-      return 0;
+    return 0;
 }
 
+/**
+    This metode build a array with Size, Addr
+    to read data once
+    Add a TDataRequest structure to DataRequest list
+*/ 
 
-DWORD App::Monitor(TabPage *page, char *listInfo)
+short App::ReadDeviceData(HWND hwnd,  char addr, char sz)
+{
+    if (Link->IsConnected() == FALSE)
+    {
+        MessageBox(App::hwnd, "O equipamento estÃ¡ OffLine", "Erro", MB_OK|MB_ICONEXCLAMATION);
+        return 0;
+    }
+    if (ReqIdx > 60)
+    {
+        printf("!!!!ReqIdx exced 60\n");
+        return 0;
+    }
+
+    DataRequest[ReqIdx++] = new TDataRequest(hwnd, addr, sz);
+
+    return 1;
+}
+/**
+      This metode receive data at Data Refresh Rate
+*/
+DWORD App::AddDataMonitor(TabPage *page, char *listInfo)
 {
     int i = GetMonLen();
 
-    MonPage[mIndex++] = page;
+    MonPage[mPageIndex++] = page;
     while(*listInfo)
     {
         if(ListSz == 63)
@@ -518,20 +525,6 @@ DWORD App::Monitor(TabPage *page, char *listInfo)
     return i;
 }
 
-void App::SetMonitor(HWND hnd)
-{
-
-    GraphMon=hnd;
-}
-
-void App::Refresh(char *data)
-{
-    for(int n=0;n<mIndex;n++)
-       MonPage[n]->Monitor(data);
-    if(GraphMon)
-       SendMessage(GraphMon,EV_DATA_REQUEST,(WPARAM)MonList,(LPARAM)data);
-}
-
 char App::GetMonLen()
 {
      char len=0;
@@ -543,6 +536,21 @@ char App::GetMonLen()
 }
 
 
+void App::SetMonitor(HWND hnd)
+{
+
+    GraphMon = hnd;
+}
+
+void App::Refresh(char *data)
+{
+    for(int n = 0; n < mPageIndex; n++)
+       MonPage[n]->Monitor(data);
+
+    if(GraphMon)
+       SendMessage(GraphMon, EV_DATA_REQUEST, (WPARAM)MonList, (LPARAM)data);
+}
+
 void App::SetRefreshRate(short r)
 {
 
@@ -551,57 +559,55 @@ void App::SetRefreshRate(short r)
 
 BOOL App::RegisterNotificationMsg()
 {
-        DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
-     ZeroMemory(&NotificationFilter,sizeof(NotificationFilter));
-     NotificationFilter.dbcc_size=sizeof(DEV_BROADCAST_DEVICEINTERFACE);
-     NotificationFilter.dbcc_devicetype=DBT_DEVTYP_DEVICEINTERFACE;
-     for(int i=0;i<sizeof(GUID_DEVICEINTERFACE_LIST)/sizeof(GUID);i++)
-     {
-         NotificationFilter.dbcc_classguid=GUID_DEVICEINTERFACE_LIST[i];
-         hDevNotify=RegisterDeviceNotification(hwnd,&NotificationFilter,DEVICE_NOTIFY_WINDOW_HANDLE);
-         if(!hDevNotify)
-         {
-             MessageBox(hwnd,"Can´t register device notification:","Error",MB_OK|MB_ICONEXCLAMATION);
-             return FALSE;
-         }
-     }
+    DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
+    ZeroMemory(&NotificationFilter,sizeof(NotificationFilter));
+    NotificationFilter.dbcc_size=sizeof(DEV_BROADCAST_DEVICEINTERFACE);
+    NotificationFilter.dbcc_devicetype=DBT_DEVTYP_DEVICEINTERFACE;
+    for(int i=0;i<sizeof(GUID_DEVICEINTERFACE_LIST)/sizeof(GUID);i++)
+    {
+        NotificationFilter.dbcc_classguid=GUID_DEVICEINTERFACE_LIST[i];
+        hDevNotify=RegisterDeviceNotification(hwnd,&NotificationFilter,DEVICE_NOTIFY_WINDOW_HANDLE);
+        if(!hDevNotify)
+        {
+            MessageBox(hwnd,"CanÂ´t register device notification:","Error",MB_OK|MB_ICONEXCLAMATION);
+            return FALSE;
+        }
+    }
     return TRUE;
 }
 
 
 void App::CreateMainMenu()
 {
-			HMENU hMenu, hSubMenu;
-			hMenu = CreateMenu();
+	HMENU hMenu, hSubMenu;
+	hMenu = CreateMenu();
 
-			hSubMenu = CreatePopupMenu();
-			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_CHARGE_ON, _T("&Dispositivo On/Off"));
- //			AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
- 			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_MEM, _T("&Acesso à memoria"));
- 	//		AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_GRAPHIC, _T("&Gráficos"));
- 	//		AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-			AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_RESET, _T("&Reset"));
-			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Dispositivo"));
+	hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_CHARGE_ON, _T("&Dispositivo On/Off"));
+	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_MEM, _T("&Acesso Ã  memoria"));
+	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_GRAPHIC, _T("&GrÃ¡ficos"));
+	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_RESET, _T("&Reset"));
+	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Dispositivo"));
 
-            hSubMenu = CreatePopupMenu();
-			AppendMenu(hSubMenu, MF_STRING, ID_OPTION_SETUP, _T("&Configuração"));
-  			AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-			AppendMenu(hSubMenu, MF_STRING, ID_SLOW, _T("Carga &lenta"));
-			AppendMenu(hSubMenu, MF_STRING, ID_FAST, _T("Carga &rápida"));
-			AppendMenu(hSubMenu, MF_STRING, ID_EQUALIZE, _T("&Equalização"));
-			AppendMenu(hSubMenu, MF_STRING, ID_FLOTING, _T("&Flutuação"));
-			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Opções"));
+    hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, ID_OPTION_SETUP, _T("&ConfiguraÃ§Ã£o"));
+	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenu(hSubMenu, MF_STRING, ID_SLOW, _T("Carga &lenta"));
+	AppendMenu(hSubMenu, MF_STRING, ID_FAST, _T("Carga &rÃ¡pida"));
+	AppendMenu(hSubMenu, MF_STRING, ID_EQUALIZE, _T("&EqualizaÃ§Ã£o"));
+	AppendMenu(hSubMenu, MF_STRING, ID_FLOTING, _T("&FlutuaÃ§Ã£o"));
+	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&OpÃ§Ãµes"));
 
-            hSubMenu = CreatePopupMenu();
-			AppendMenu(hSubMenu, MF_STRING, ID_HELP_HLP, _T("&Ajuda"));
- 			AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-			AppendMenu(hSubMenu, MF_STRING, ID_HELP_ABOUT, _T("&Acerca"));
-			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Ajuda"));
+    hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, ID_HELP_HLP, _T("&Ajuda"));
+	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenu(hSubMenu, MF_STRING, ID_HELP_ABOUT, _T("&Acerca"));
+	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Ajuda"));
 
-			SetMenu(hwnd, hMenu);
-
-
+	SetMenu(hwnd, hMenu);
 }
 
 
@@ -653,8 +659,9 @@ DWORD App::GetAvailablePorts ( std::string* portList )
             }
         }
     }
-
-	return iFindedPorts;
+    if (portList->compare( 0, 3, "COM") == 0)
+	    return iFindedPorts;
+    else return 0;
 }
 
 double AD_INtoVolts(short data)
@@ -710,10 +717,7 @@ short VoltsToPWM(double Rms, short Uin)
 }
 VOID CALLBACK  OnMonitor( HWND hwnd, UINT uMsg,	 UINT idEvent, DWORD dwTime  )
 {
- /*    if(app->GetDuty())return;
-     for(int n=0;n<app->GetMon();n++)
-         app->GetObject(n)->Monitor();
-*/
+
 }
 
 void StartCommonControls(DWORD flags)
@@ -791,97 +795,6 @@ void OnCancelBtn()
 
 }
 static ULONG To_do=0;
-
-BOOL CALLBACK ConfigProc(HWND hwnd , UINT msg, WPARAM wParam, LPARAM lParam)
-{
-     switch(msg)
-    {
-          case WM_INITDIALOG:
-             {
-               char str[32];
-     /*           for(int n=1;n<=20;n++)
-               {
-                    sprintf(str,"%d",n);
-                    SendDlgItemMessage(hwnd,ID_LOOPCNT,CB_ADDSTRING,0,(LPARAM)str);
-               }
-               short i=app-> ReadDeviceData( NULL, 0x4d, 1, "", NULL);
-               sprintf(str,"%d",i);
-                SendDlgItemMessage(hwnd, ID_LOOPCNT,CB_SETCURSEL,i-1,0);
-
-               for(int n=250;n<=4000;n+=250)
-               {
-                    sprintf(str,"%d",n);
-                    SendDlgItemMessage(hwnd,ID_REFRESH,CB_ADDSTRING,0,(LPARAM)str);
-               }
-               i = app->GetRefreshRate();
-               sprintf(str,"%d",i);
-               i=SendDlgItemMessage(hwnd, ID_REFRESH,CB_FINDSTRING,-1,(LPARAM)str);
-               if(i!=CB_ERR) SendDlgItemMessage(hwnd,ID_REFRESH,CB_SETCURSEL,(WPARAM)i,0);
-*/
-              }
-              To_do=0;
-                break;
-          case WM_COMMAND:
-               switch(LOWORD(wParam))
-               {
-                     case ID_LOOPCNT:
-                          if(HIWORD(wParam) == CBN_SELCHANGE)
-                          {
-                              To_do=ID_LOOPCNT;
-                              To_do|=(0x4d<<16);
-                          }
-                          break;
-                     case ID_REFRESH:
-                          if(HIWORD(wParam) == CBN_SELCHANGE)
-                          {
-                               To_do=ID_REFRESH;
-
-                              char str[32];
-                              int i = SendDlgItemMessage(hwnd,ID_REFRESH,CB_GETCURSEL,0,0);
-                              SendDlgItemMessage(hwnd,ID_REFRESH,WM_GETTEXT,32,(LPARAM)str);
-                              i=atoi(str);
-                              To_do|=(i<<16);
-                         }
-                          break;
-                     case ID_DEFAULT:
-                          OnDefaultBtn();
-                          break;
-                     case ID_OK:
-                        {
-          /*                  char data= SendDlgItemMessage(hwnd,(To_do&0xffff),CB_GETCURSEL,0,0)+1;
-                            if((To_do&0xffff)==ID_LOOPCNT)
-                            {
-                                char *frame = app->BuildCmd(WRITE_MEM,RAM,(To_do>>16),1);
-                                if(app->Link->SendCommand(frame))
-                                {
-                                    Link->SendData(1,&data);
-                                }
-                            }
-                            else if((To_do&0xffff)==ID_REFRESH)
-                            {
-                                 app->SetRefreshRate(To_do>>16);
-                            }
-                            To_do=0;
-                            SendMessage(hwnd,WM_CLOSE,0,0);
-            */            }
-                          break;
-                     case ID_CANCEL:
-                          To_do=0;
-                          SendMessage(hwnd,WM_CLOSE,0,0);
-                          break;
-               }
-               break;
-          case WM_CLOSE:
-               EndDialog(hwnd,0);
-               break;
-
-    }
-    return 0;
-}
-
-
-
-
 
 
 BOOL CALLBACK MessageProc(HWND hwnd , UINT msg, WPARAM wParam, LPARAM lParam)

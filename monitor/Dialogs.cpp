@@ -24,21 +24,25 @@ extern void PrintDCB(DCB &m_Dcb);
 
 
 
-CMonitorPage::CMonitorPage(CTabCtrl *Ctrl,char *nm):TabPage(Ctrl,nm,DLG_MONITOR,DialogProc,this)
+CMonitorPage::CMonitorPage(CTabCtrl *Ctrl, char *nm):TabPage(Ctrl, nm, DLG_MONITOR, DialogProc, this)
 {
   //   HINSTANCE hInst=reinterpret_cast<HINSTANCE>(GetWindowLong(GetHwnd(),GWL_HINSTANCE));
-    hFrontBmp=LoadBitmap(hInst,MAKEINTRESOURCE(IDB_SYSTEM));
- }
+    hFrontBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_SYSTEM));
+}
 
 CMonitorPage::~CMonitorPage()
 {
-     DeleteObject(hFrontBmp);
+    DeleteObject(hFrontBmp);
 
 }
 void CMonitorPage::Populate()
 {
 
     char name[32];
+    /**
+        Store dataSize and Addr to read from device memory space
+        Must terminate with 0 
+    */
     char addr[] = {6, 0x60, 0x1, 0x42, 0};
 
     sprintf(name, "%c%c%c %d.%d.%d", app->GetDeviceName()[0],
@@ -51,7 +55,7 @@ void CMonitorPage::Populate()
     HWND hDev = GetDlgItem(hWnd, ID_DEV);
     SendMessage(hDev, WM_SETTEXT, 0, (LPARAM)name);
 
-    DataIdx = app->Monitor(this, addr);
+    DataIdx = app->AddDataMonitor(this, addr);
 
     printf("Dev name %s\n",name);
 }
@@ -62,7 +66,7 @@ void CMonitorPage::Monitor(char *data)
       Translate(data+DataIdx,AD_INtoVolts,2,"V",ID_UIN);
       Translate(data+DataIdx+2,ADtoVolts,2,"V",ID_UOUT);
       Translate(data+DataIdx+4,ADtoAmps,2,"A",ID_IOUT);
-      Translate(data+DataIdx+6,ADtoTemp,1,"ºC",ID_TEMP);
+      Translate(data+DataIdx+6,ADtoTemp,1,"ÂºC",ID_TEMP);
   /*     for(int i=0;i<6;i++)
           printf("0x%x ",data[DataIdx+i]&0xff);
        printf("\n");
@@ -140,9 +144,6 @@ BOOL CALLBACK CMonitorPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
     return FALSE;
 }
-
-///**********************************************************
-
 
 
 ///**********************************************************************
@@ -293,7 +294,7 @@ CBattPage::CBattPage(CTabCtrl *Ctrl,char *name):TabPage(Ctrl,name,DLG_BATTERY, C
                                                 nParalel(1)
 {
     hBattBmp=LoadBitmap(hInst,MAKEINTRESOURCE(IDB_BATTERY));
-   if(!hBattBmp)printf("Error Loading BmpBattery\n");
+    if(!hBattBmp)printf("Error Loading BmpBattery\n");
 
 
 
@@ -309,33 +310,26 @@ CBattPage::~CBattPage()
 
 void CBattPage::Populate()
 {
-  //     char str[4];
-  //  sprintf(str,"%s","--");
-//      SendMessage(hNSerial,WM_SETTEXT,0,(LPARAM)str);
+    /// Add a TDataRequest structure to App::DataRequest list
 
-      app->ReadDeviceData( hWnd, 0x49, 2);
- /*
-     float _U = ADtoVolts(ad)-10.5;
-  // float _U= 11.0-10.5;
-     ChargeState = (short)((float)(_U*100)/2.2);
-     if(ChargeState > 100) ChargeState = 100;
+    char data[] = {1, 0x42, 3, 0x49, 5, 0x77, 0};
+    DataIdx = app->AddDataMonitor(this, data); /// Output data via virtual metode Monitor
 
-     if(ad < 0x1b5)
-        nSerial=1;
-    else if(ad < 0x363)
-        nSerial=2;
- */
-      char data[]={1,0x42,4,0x78,0};
-      DataIdx=app->Monitor(this,data);
 }
 
 void CBattPage::Monitor(char *data)
-{
+{ 
+    int Ri = 300;
+    char sym[2];
+    sym[0] = 0xe5;
+    sym[1] = '\0';
 
-      Translate(data+DataIdx,ADtoTemp,1,"ºC",ID_TEMP);
-  //    Translate(data+DataIdx+1,ADtoVolts,"V",ID_UOUT);
-      Translate(data+DataIdx+1,NULL,4,"A/h",ID_AMP_H);
-
+    Translate(data + DataIdx, ADtoTemp, 1, "ÂºC", ID_TEMP);
+    Translate(data + DataIdx + 1, NULL, 1, "A/h", ID_CAPACITY);
+    Translate(data + DataIdx + 2, ADtoVolts, 2, "V", ID_UOUT);
+    Translate(data + DataIdx + 4, NULL, 1 ,"%", ID_AMP_H);
+    Translate(data + DataIdx + 5, NULL, 4, "h", ID_AUTONOMI);
+    Translate((char*)&Ri, NULL, 4, sym, ID_RI);
 }
 
 LRESULT  CBattPage::OnPaint(WPARAM wParam,LPARAM lParam)
@@ -688,21 +682,11 @@ CConfigPage::~CConfigPage()
 
 void CConfigPage::Populate()
 {
-     char str[64];
-
- /*   HDC dc=GetDC(hWnd);
-    ModeVoltage=12;
-
-     SetTextColor(dc,RGB(10,10,10));
-    sprintf(str,"Parametros para o modo de %d Volts:",ModeVoltage);
-    TextOut(dc,20,20,str,lstrlen(str));
-    //  SendDlgItemMessage(hWnd,ID_UMODE,WM_SETTEXT,0,(LPARAM)str);
-*/
-
-     app->ReadDeviceData( hWnd,0x50, 12);
-
-//    ReleaseDC(hWnd,dc);
- }
+    /// Read 12 bytes from addr 0x50
+    /// V_off, V_float, V_oct, I_tric, I_blk,  I_oct
+printf("V_off \n");
+     app->ReadDeviceData( hWnd, 0x50, 12);
+}
 
 
 BOOL CALLBACK CConfigPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -754,7 +738,7 @@ BOOL CALLBACK CConfigPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
                         sprintf(str,"%f",v);
                         SendDlgItemMessage(Obj->hWnd,ID_IOCT,WM_SETTEXT,0,(LPARAM)str);
                         break;
-                         /// Tensão de disparo 12,6v
+                         /// TensÃ£o de disparo 12,6v
                       }
 
                }

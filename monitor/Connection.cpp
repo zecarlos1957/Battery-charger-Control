@@ -60,53 +60,36 @@ void Connection::DsrNotify(bool status)
 
 void Connection::CtsNotify( bool status )
 {
-       DWORD error;
-     /**
-           CTS Hi == disable  CTS low == Enable
-     */
+    DWORD error;
 
-  //   if(*(DWORD*)FrameData==0xbd91405)
-  //          printf("Enable Monitor\n");// Dtr(1);
+    printf("%s\n",status==false?"CTS_CONTROL_ENABLE":"CTS_CONTROL_DISABLE");
 
+    if(status == false || (FrameData[1]&0x10) == 0) return;
 
-     printf("%s\n",status==false?"CTS_CONTROL_ENABLE":"CTS_CONTROL_DISABLE");
- //printf(" cmd 0x%x adr 0x%x len 0x%x :",FrameData[1],FrameData[2],len  );
+    /// if (CTS is disable(true) and cmd==WRITE_MEM(0x01)) send data now.
 
+    error=write_buffer(&FrameData[5],FrameData[3]);
+    if(error != RS232_SUCCESS)
+    {
+        DisplayLastError("WritePort");
+    }
 
-
-      if(status == false || (FrameData[1]&0x10) == 0) return;
-
- /// if (CTS is disable(true) and cmd==WRITE_MEM(0x01)) send data now.
-
-      error=write_buffer(&FrameData[5],FrameData[3]);
-      if(error != RS232_SUCCESS)
-      {
-          DisplayLastError("WritePort");
-      }
-
- //     printf(" Frame_Data 0x%x 0x%x 0x%x data:",FrameData[1]&0xff,FrameData[2]&0xff,FrameData[3]&0xff );
-      printf("Frame_Data: ");
-      for(int n=0;n<FrameData[3];n++)
-          printf("0x%x ", FrameData[5+n] );
-
-     printf("\n");
-
-
+    printf("Frame_Data: ");
+    for(int n=0;n<FrameData[3];n++)
+        printf("0x%x ", FrameData[5+n] );
+    printf("\n");
 }
 
 void Connection::TxNotify( )
 {
-      DWORD error;
-      if( FrameData[0]==0) return;
+    if( FrameData[0]==0) 
+         return;
 
-     if(!IsConnected() )
-      {
+    if(!IsConnected() )
+         return;
 
-          return;
-      }
-      printf("Frame_Cmd 0x%x 0x%x 0x%x 0x%x \n",FrameData[0]&0xff, FrameData[1]&0xff, FrameData[2]&0xff, FrameData[3]&0xff  );
-
-
+    if(!Cts()) /// Just print out when output a Fame_Cmd
+        printf(" Frame_Cmd: 0x%x 0x%x 0x%x 0x%x \n", FrameData[0]&0xff, FrameData[1]&0xff, FrameData[2]&0xff, FrameData[3]&0xff  );
 
 }
 
