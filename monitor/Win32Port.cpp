@@ -1048,13 +1048,7 @@ RS232Error Win32Port::write_settings()
             return (RS232Error) WIN32_CHECK_WINDOWS_ERROR;
         }
     }
-
-  /*  printf("Dtr Rts Cts Dsr\n   %d    %d   %d   %d  -> ",m_Dcb.fDtrControl,m_Dcb.fRtsControl,m_Dcb.fOutxCtsFlow,m_Dcb.fOutxDsrFlow);
-    DCB dcb;
-     GetCommState(m_hPort,&dcb);
-       printf(" %d   %d   %d   %d\n",dcb.fDtrControl,dcb.fRtsControl,dcb.fOutxCtsFlow,dcb.fOutxDsrFlow);
-*/
-     return error;
+    return error;
 }
 
 //

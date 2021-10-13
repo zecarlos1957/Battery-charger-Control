@@ -684,7 +684,7 @@ void CConfigPage::Populate()
 {
     /// Read 12 bytes from addr 0x50
     /// V_off, V_float, V_oct, I_tric, I_blk,  I_oct
-printf("V_off \n");
+
      app->ReadDeviceData( hWnd, 0x50, 12);
 }
 

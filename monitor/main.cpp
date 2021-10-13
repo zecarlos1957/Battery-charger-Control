@@ -36,7 +36,7 @@
 #define CCPR1L 0x15
 #define CCP1CON 0x17
 
-#define WAIT_T 1000
+#define WAIT_T 100
 
 
 using namespace std;
@@ -202,14 +202,6 @@ LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
 				    string pname(pDevPort->dbcp_name);
 
                       Link = new Connection(hwnd, pname);
-                     unsigned long t1=GetTickCount();
-
-                      while(!Link->IsConnected())
-                            if(GetTickCount() - t1 > WAIT_T)
-                            {
-                                 TimeOver();
-                                 return 0;
-                            }
 
                         char *frame=Link->BuildCmd(READ_MEM, EEPROM, 0x00, 6);
                          Link->SendCommand(frame);
@@ -374,17 +366,6 @@ printf("SetFlag %x ",(flags%0x04));
 
 LRESULT App::OnDataRequest(WPARAM wParam, LPARAM lParam)
 {
-    unsigned long t1 = GetTickCount();
-
-    while(!Link->IsConnected())
-    {
-        if (GetTickCount() - t1 > WAIT_T)
-        {
-            TimeOver();
-            return FALSE;
-        }
-    }
-
     char *frame = (char*)lParam;
     Link->SendCommand(frame);
     return TRUE;
@@ -449,9 +430,6 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
                    {
                         SendMessage(DataRequest[ReqIdx]->hwnd, EV_DATA_REQUEST,wParam,lParam);
                         delete DataRequest[ReqIdx];
-                        int t1=WAIT_T*6;
-                        while(t1--);
-
                         PostMessage(hwnd,EV_APP_INIT,0,0);
                    }
               }
