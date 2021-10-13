@@ -829,18 +829,18 @@ Control_done
 
 ;****************************************
 
-     btfss RCSTA,SPEN
-     btfss DTR_PIN
-     goto RS_ON
-     bsf RCSTA,SPEN
-     bsf CTS_PIN
-     bsf DSR_PIN
+     btfss RCSTA,SPEN  ; if  USART disable
+     btfss DTR_PIN     ; and DTE inline
+     goto RS_ON       
+     bsf RCSTA,SPEN    ; enable USART
+     bsf CTS_PIN       ; set CTS
+     bsf DSR_PIN       ; set DSR
 RS_ON
-     btfsc DTR_PIN
+     btfsc DTR_PIN     ; else if DTE offline
      goto RS_DONE
-     bcf RCSTA,SPEN
-     bcf CTS_PIN
-     bcf DSR_PIN
+     bcf RCSTA,SPEN    ; disable USART
+     bcf CTS_PIN       ; clear CTS
+     bcf DSR_PIN       ; clear DSR
 RS_DONE
 
 
@@ -1372,16 +1372,16 @@ UsartRX:
    movfw RS_sz
    btfsc STATUS,Z      ; if frame size == 0
    goto init_frame     ; start build frame
-   ; if chkSum>0 return
+                       ; if chkSum>0 return
    movfw RS_chkSum     ; else
    btfsc STATUS,Z      ; if frame not finish
-   goto Rec            ; save data byte
-   movfw RCREG
+   goto Rec            ; add data to frame
+   movfw RCREG         ; else discard data byte
    return
 Rec:
-   movlw RS_sz      ; frame first byte address to W 
-   addwf RS_sz,w    ; add bytes received
-   movwf FSR        ; update frame pointer index
+   movlw RS_sz         ; frame first byte address to W 
+   addwf RS_sz,w       ; add bytes received
+   movwf FSR           ; update frame pointer index
 
   ; check error
    btfss RCSTA,FERR
@@ -1427,7 +1427,7 @@ NO_ERR1:
 ;   bsf RCSTA,CREN
 ;NO_ERR2
 
-   movfw RCREG     ; get byte data to W
+   movfw RCREG     ; move byte data to W
    sublw 5         ; teste frame ID
    btfss STATUS,Z  ; if data != frame ID
    return          ; abort 
@@ -1453,37 +1453,39 @@ NO_ERR1:
 check_cmd
 
    clrf RS_sz
-   btfsc RS_cmd,4
-   goto write_loop
+   btfsc RS_cmd,4    ; if cmd bit 4 == 1
+   goto write_loop   ; goto write operation
+                     ; else do read operation   
    ; do read
    clrf RS_chkSum
 read_loop;
-    btfss RS_cmd,3
-   goto RRam
+    btfss RS_cmd,3   ; if cmd bit 3 == 0
+   goto RRam         ; read_ram
+                     ; else read_eeprom
    ; eeprom
    movfw RS_addr
    addwf RS_sz,W
    call read_eeprom
-   goto SendToUART
+   goto SendToUART   ; while len > 0 send requested data byte
 RRam:
-   movfw RS_addr
-   addwf RS_sz,W
-   movwf FSR
-   movfw INDF
+   movfw RS_addr     ; get frame buffer addr
+   addwf RS_sz,W     ; add current offset
+   movwf FSR         ; update pointer to read from
+   movfw INDF        ; get the data
 SendToUART:
-     banksel TXSTA
-     btfss TXSTA,TRMT
-     goto $-1    ; wait buffer empty
-     banksel TXREG
-   movwf TXREG
-   addwf RS_chkSum,F
-   incf RS_sz,F
+   banksel TXSTA
+   btfss TXSTA,TRMT
+   goto $-1          ; wait buffer empty
+   banksel TXREG
+   movwf TXREG         ; save requested data to output buffer
+   addwf RS_chkSum,F   ; update checksum
+   incf RS_sz,F        ; increment current offset
    decfsz RS_len,F
-   goto read_loop
+   goto read_loop      ; loop while len > 0 
    clrf RS_sz
      banksel TXSTA
-     btfss TXSTA,TRMT
-     goto $-1    ; wait buffer empty
+     btfss TXSTA,TRMT  ; wait output checksum byte
+     goto $-1          
      banksel TXREG
    movfw RS_chkSum
    movwf TXREG
@@ -1491,7 +1493,7 @@ SendToUART:
    return
 write_loop:
    bcf CTS_PIN
-   btfss PIR1,RCIF
+   btfss PIR1,RCIF   ; wait RX buffer empty
    goto $-1
   ; check error
    btfss RCSTA,FERR
@@ -1512,8 +1514,8 @@ NO_OERR1
    movfw RCREG
    movwf RS_chkSum
 
-   btfss RS_cmd,3
-   goto WRam
+   btfss RS_cmd,3    ; if cmd bit 3 == 1
+   goto WRam         ; write ram
   ; write_eeprom
    banksel EEDATA
    movwf EEDATA
