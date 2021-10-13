@@ -7,7 +7,7 @@
 
 
 
-	#include "p16f873a.inc"
+	#include "p16f876a.inc"
 
 
 

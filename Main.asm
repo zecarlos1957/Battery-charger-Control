@@ -1,6 +1,6 @@
 ;**********************************************************************
 ;  Filename: Battery Charge Control                                   *
-;  Uses PIC16F873A                                                    *
+;  Uses PIC16F876A                                                    *
 ;  Date: 1.5 2016                                                     *
 ;  Author:  Jose Jesus                                                *
 ;                                                                     *
@@ -115,7 +115,7 @@ R_CNT   equ 0x0a
 
 
 	PROCESSOR 16F873a
-	#include "p16f873a.inc"
+	#include "p16f876a.inc"
 
 	; embed Configuration Data within .asm File.
 	__CONFIG   _CPD_OFF & _CP_OFF & _WDT_OFF & _PWRTE_ON & _XT_OSC & _LVP_OFF & _DEBUG_OFF
@@ -203,8 +203,8 @@ R_CNT   equ 0x0a
 
     #define DTR_PIN PORTC,1
     #define DSR_PIN PORTC,3
-    #define CTS_PIN PORTC,5
     #define RTS_PIN PORTC,4
+    #define CTS_PIN PORTC,5
 
 
 
