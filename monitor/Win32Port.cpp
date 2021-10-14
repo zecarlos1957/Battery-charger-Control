@@ -1608,7 +1608,7 @@ void Win32Port::check_modem_status(bool first_time, DWORD event_mask )
 
     if ( !GetCommModemStatus( m_hPort, &m_dwModemStatus ) )
     {
-           // assert( false );
+           assert( false );
            return;
     }
     //
