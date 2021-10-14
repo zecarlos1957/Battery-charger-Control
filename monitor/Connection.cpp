@@ -29,9 +29,8 @@ Connection::Connection(HWND hwnd, std::string &port):Win32Port(port, CBR_9600, N
 
 Connection::~Connection()
 {
-    Dtr(0);
-    Rts(0);
-    SetCommMask(m_hPort,0);
+    Dtr(DTR_CONTROL_DISABLE);
+ //   SetCommMask(m_hPort,0);
 }
 
 BOOL Connection::SendCommand(char *comd)
@@ -54,7 +53,7 @@ BOOL Connection::SendData(int len, char *data)
 
 void Connection::DsrNotify(bool status)
 {
-      OnLine=status;
+      OnLine = status;
       printf("%s\n", OnLine?"OnLine":"OffLine");
 }
 

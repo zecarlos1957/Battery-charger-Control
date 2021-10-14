@@ -466,11 +466,12 @@ LRESULT App::OnInit(WPARAM wParam, LPARAM lParam)
 
 short App::ReadDeviceData(HWND hwnd,  char addr, char sz)
 {
-    if (Link->IsConnected() == FALSE)
+ /*   if (Link->IsConnected() == FALSE)
     {
         MessageBox(App::hwnd, "O equipamento está OffLine", "Erro", MB_OK|MB_ICONEXCLAMATION);
         return 0;
     }
+*/
     if (ReqIdx > 60)
     {
         printf("!!!!ReqIdx exced 60\n");
