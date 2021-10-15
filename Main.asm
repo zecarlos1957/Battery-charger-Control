@@ -114,7 +114,7 @@ R_CNT   equ 0x0a
 
 
 
-	PROCESSOR 16F873a
+	PROCESSOR 16F876a
 	#include "p16f876a.inc"
 
 	; embed Configuration Data within .asm File.
@@ -441,7 +441,7 @@ MAIN
     clrf Requer
     clrf V_cal
     clrf I_cal
-    clrf Err_Simbol
+    clrf Err_Symbol
 
     movlw 0x0e
     movwf Refresh_rate
@@ -619,7 +619,7 @@ Loop
 ;err:
 ;   bsf NO_BATTERY
 ;   movlw 0xf8
-;   movwf Err_Simbol
+;   movwf Err_Symbol
 ;   clrf CCPR1L
 ;   movlw 0x0f
 ;   andwf CCP1CON,F
@@ -849,11 +849,11 @@ RS_DONE
 
 
      movfw RS_chkSum
-     btfsc STATUS,Z
+     btfsc STATUS,Z     ; if RS_chkSum != 0 
      goto continue
-
+                        ; we have received a command frame so
      bcf INTCON,GIE
-     call check_cmd
+     call check_cmd     ; Parse command frame
      bsf INTCON,GIE
 continue:
 
@@ -1038,7 +1038,7 @@ del_msg2
    movlw 0x20 ; space
    btfss MSG_BLINK
 ;   movlw 0xf8       ; NO_BATTERY Symbol
-   movfw Err_Simbol
+   movfw Err_Symbol
    call LCDdata
    bcf NO_BATTERY
   ; set blink status
@@ -1365,7 +1365,7 @@ I_Ddone
 ;************************************************************************
 
 
-
+; Read a Command frame data
 
 UsartRX:
    bcf STATUS,RP0
@@ -1374,13 +1374,13 @@ UsartRX:
    goto init_frame     ; start build frame
                        ; if chkSum>0 return
    movfw RS_chkSum     ; else
-   btfsc STATUS,Z      ; if frame not finish
+   btfsc STATUS,Z      ; if frame not complete (RS_chkSum==0)
    goto Rec            ; add data to frame
    movfw RCREG         ; else discard data byte
    return
 Rec:
-   movlw RS_sz         ; frame first byte address to W 
-   addwf RS_sz,w       ; add bytes received
+   movlw RS_sz         ; frame buffer first byte address to W 
+   addwf RS_sz,w       ; add current offset
    movwf FSR           ; update frame pointer index
 
   ; check error
@@ -1388,20 +1388,20 @@ Rec:
    goto NO_FERR
    bsf RS_ERROR      
    movlw 0x46
-   movwf Err_Simbol
+   movwf Err_Symbol
 NO_FERR:
    btfss RCSTA,OERR
    goto NO_OERR2
    bcf RCSTA,CREN
    bsf RS_ERROR
    movlw 0x4f
-   movwf Err_Simbol
+   movwf Err_Symbol
    bsf RCSTA,CREN
 NO_OERR2
 
-   movfw RCREG        ; get data
-   movwf INDF         ; save data to frame
-   incf RS_sz,F       ; increment index
+   movfw RCREG        ; Load data
+   movwf INDF         ; save data to frame buffer
+   incf RS_sz,F       ; update offset
    movfw RS_sz 
    sublw 5            ; check if it is last byte
    btfsc STATUS,Z
@@ -1416,23 +1416,23 @@ init_frame:
    goto NO_ERR1
    bsf RS_ERROR
    movlw 0x46
-   movwf Err_Simbol
+   movwf Err_Symbol
 NO_ERR1:
 ;   btfss RCSTA,OERR
 ;   goto NO_ERR2
 ;   bcf RCSTA,CREN
 ;   bsf RS_ERROR
 ;   movlw 0x4f
-;   movwf Err_Simbol
+;   movwf Err_Symbol
 ;   bsf RCSTA,CREN
 ;NO_ERR2
 
-   movfw RCREG     ; move byte data to W
+   movfw RCREG     ; Load data to W
    sublw 5         ; teste frame ID
    btfss STATUS,Z  ; if data != frame ID
    return          ; abort 
    incf RS_sz,F    ; else increment frame size
-   btfss PIR1,RCIF  
+   btfss PIR1,RCIF ; wait RX buffer full 
    goto $-1
    goto UsartRX
 
@@ -1493,28 +1493,28 @@ SendToUART:
    return
 write_loop:
    bcf CTS_PIN
-   btfss PIR1,RCIF   ; wait RX buffer empty
+   btfss PIR1,RCIF   ; wait RX buffer full
    goto $-1
   ; check error
    btfss RCSTA,FERR
    goto NO_ERR
    bsf RS_ERROR
    movlw 0x46
-   movwf Err_Simbol
+   movwf Err_Symbol
 NO_ERR:
 ;   btfss RCSTA,OERR
 ;   goto NO_OERR1
 ;   bcf RCSTA,CREN
 ;   bsf RS_ERROR
 ;   movlw 0x4f
-;   movwf Err_Simbol
+;   movwf Err_Symbol
 ;   bsf RCSTA,CREN
 NO_OERR1
 
-   movfw RCREG
-   movwf RS_chkSum
+   movfw RCREG       ; Load received byte
+   movwf RS_chkSum   ; Use RS_chkSum as a temporary buffer
 
-   btfss RS_cmd,3    ; if cmd bit 3 == 1
+   btfss RS_cmd,3    ; if MemType == RAM
    goto WRam         ; write ram
   ; write_eeprom
    banksel EEDATA
@@ -1531,20 +1531,20 @@ NO_OERR1
    goto write_loop
    clrf RS_sz
    clrf RS_chkSum
-   bsf CTS_PIN
+   bcf CTS_PIN
    return
 WRam:
-   movfw RS_addr  ; RAM, ROM
-   addwf RS_sz,W
-   movwf FSR
-   movfw RS_chkSum
-   movwf INDF
-   incf RS_sz,F
-   decfsz RS_len,F
+   movfw RS_addr   ; Load dest address
+   addwf RS_sz,W   ; Add current offset
+   movwf FSR       ; Update pointer address
+   movfw RS_chkSum ; Load data stored at temp buffer
+   movwf INDF      ; Write data to destination address
+   incf RS_sz,F    ; Update current offset
+   decfsz RS_len,F ; Loop while bytes length
    goto write_loop
    clrf RS_sz
    clrf RS_chkSum
-   bsf CTS_PIN
+   bcf CTS_PIN
    return
 
 ;**********************************
@@ -3020,7 +3020,7 @@ SecCount   equ 0x75
 T_AmpH     equ 0x77
 Amp_Sec    equ 0x78
 
-Err_Simbol equ 0x7c
+Err_Symbol equ 0x7c
 Charge_Triger equ 0x7d
 
 ; bank1
