@@ -602,38 +602,39 @@ Loop
 
 ;****************************************
 
-;   movfw I_out
-;   subwf U_out,f
-;   btfss STATUS,C
-;   decf U_out+1
-;   movfw I_out+1
-;   subwf U_out+1,f
+   ; Calculates the voltage drop in R ( U1-U2)
+   movfw I_out
+   subwf U_out,f
+   btfss STATUS,C
+   decf U_out+1
+   movfw I_out+1
+   subwf U_out+1,f
 
 
 ;***********************************
 
    ; if(U_out < 8.4V) set NO_BATTERY
-;   movfw U_out+1
-;   bz err
-;   goto err_ok
-;err:
-;   bsf NO_BATTERY
-;   movlw 0xf8
-;   movwf Err_Symbol
-;   clrf CCPR1L
-;   movlw 0x0f
-;   andwf CCP1CON,F
-;   goto Control_done
+   movfw U_out+1
+   bz err
+   goto err_ok
+err:
+   bsf NO_BATTERY
+   movlw 0xf8
+   movwf Err_Symbol
+   clrf CCPR1L
+   movlw 0x0f
+   andwf CCP1CON,F
+   goto Control_done
 
 
 ;*************************************
 err_ok
 
-;   btfsc CHARGE_ON
-;   goto teste_ok
-;   movfw Charge_Triger+1
-;   subwf U_out+1,W
-;teste_ok
+   btfsc CHARGE_ON
+   goto teste_ok
+   movfw Charge_Triger+1
+   subwf U_out+1,W
+teste_ok
 
 
    movlw SLOW_CHARGE
@@ -833,13 +834,11 @@ Control_done
      btfss DTR_PIN     ; and DTE inline
      goto RS_ON       
      bsf RCSTA,SPEN    ; enable USART
-     bsf CTS_PIN       ; set CTS
      bsf DSR_PIN       ; set DSR
 RS_ON
      btfsc DTR_PIN     ; else if DTE offline
      goto RS_DONE
      bcf RCSTA,SPEN    ; disable USART
-     bcf CTS_PIN       ; clear CTS
      bcf DSR_PIN       ; clear DSR
 RS_DONE
 
@@ -1484,15 +1483,15 @@ SendToUART:
    goto read_loop      ; loop while len > 0 
    clrf RS_sz
      banksel TXSTA
-     btfss TXSTA,TRMT  ; wait output checksum byte
+     btfss TXSTA,TRMT  ; wait TX buffer empty
      goto $-1          
      banksel TXREG
    movfw RS_chkSum
-   movwf TXREG
-   clrf RS_chkSum
+   movwf TXREG         ; move RS_chkSum to TX buffer
+   clrf RS_chkSum      ; reset RS_chkSum as a empty frame  
    return
 write_loop:
-   bcf CTS_PIN
+   bsf CTS_PIN
    btfss PIR1,RCIF   ; wait RX buffer full
    goto $-1
   ; check error
@@ -1543,8 +1542,8 @@ WRam:
    decfsz RS_len,F ; Loop while bytes length
    goto write_loop
    clrf RS_sz
-   clrf RS_chkSum
-   bcf CTS_PIN
+   clrf RS_chkSum   ; reset RS_chkSum so we can use it to signaled 
+   bcf CTS_PIN      ; a received frame
    return
 
 ;**********************************
