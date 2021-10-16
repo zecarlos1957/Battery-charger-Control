@@ -59,7 +59,7 @@ BOOL CTabCtrl::SetTabControlImageList()
     int i;
     HICON hIcon;
 
-    for(i=0;i<MAX_TABPAGE; i++)
+    for(i = 0; i < MAX_TABPAGE; i++)
     {
         hIcon = reinterpret_cast<HICON>(LoadImage(hLib, MAKEINTRESOURCE(icon_index[i]),IMAGE_ICON,0,0,LR_SHARED));
         ImageList_AddIcon(hImages,hIcon);
@@ -77,7 +77,7 @@ HWND CTabCtrl::Insert(TabPage *page)
     int i;
     if(nTab == MAX_TABPAGE)
     {
-        MessageBox(NULL, "Couldn't add Tab. (Full) ",page->GetName(), MB_OK | MB_ICONERROR);
+        MessageBox(NULL, "Couldn't add Tab. (Full) ", page->GetName(), MB_OK | MB_ICONERROR);
         return NULL;
     }
 
@@ -85,7 +85,8 @@ HWND CTabCtrl::Insert(TabPage *page)
     tie.pszText = page->GetName();
     tie.cchTextMax = lstrlen(page->GetName() + 1);
     tie.iImage = nTab;
-    if((i = TabCtrl_InsertItem(hTabCtrl,nTab,&tie)) == -1)
+
+    if((i = TabCtrl_InsertItem(hTabCtrl, nTab, &tie)) == -1)
     {
         DestroyWindow(hTabCtrl);
         MessageBox(NULL, "Couldn't add Tab ", page->GetName(), MB_OK | MB_ICONERROR);
@@ -134,7 +135,7 @@ void CTabCtrl::Populate()
 
 
 
-TabPage::TabPage(CTabCtrl *Ctrl,char *nm,UINT id, DLGPROC Proc, TabPage *Obj)
+TabPage::TabPage(CTabCtrl *Ctrl, char *nm, UINT id, DLGPROC Proc, TabPage *Obj)
 {
     lstrcpy(name,nm);
 

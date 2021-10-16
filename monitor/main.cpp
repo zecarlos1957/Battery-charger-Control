@@ -148,11 +148,11 @@ App::App(HWND hwnd):hwnd(hwnd),
         Link = new Connection(hwnd, portList);    /// Open last serial com port
 
     TabCtrl = new  CTabCtrl(hwnd);
-    TabCtrl->Insert(new CMonitorPage(TabCtrl, _T("Monitor")));
-    TabCtrl->Insert(new CBattPage(TabCtrl, _T("Grupo de baterias")));
-    TabCtrl->Insert(new CPainelPage(TabCtrl, _T("Paineis solares")));
-    TabCtrl->Insert(new CPortPage(TabCtrl, _T("Comunicações")));
-    TabCtrl->Insert(new CConfigPage(TabCtrl, _T("Configuração")));
+    TabCtrl->Insert(new CMonitorPage(TabCtrl, "Monitor"));
+    TabCtrl->Insert(new CBattPage(TabCtrl, "Grupo de baterias"));
+    TabCtrl->Insert(new CPainelPage(TabCtrl, "Paineis solares"));
+    TabCtrl->Insert(new CPortPage(TabCtrl, "Comunicações"));
+    TabCtrl->Insert(new CConfigPage(TabCtrl, "Configuração"));
 
     if(Link && Link->IsValid())
     {
@@ -576,29 +576,29 @@ void App::CreateMainMenu()
 	hMenu = CreateMenu();
 
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_CHARGE_ON, _T("&Dispositivo On/Off"));
-	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_MEM, _T("&Acesso à memoria"));
-	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_GRAPHIC, _T("&Gráficos"));
-	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-	AppendMenu(hSubMenu, MF_STRING, ID_DEVICE_RESET, _T("&Reset"));
-	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Dispositivo"));
+	AppendMenuW(hSubMenu, MF_STRING, ID_DEVICE_CHARGE_ON, L"&Dispositivo On/Off");
+	AppendMenuW(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenuW(hSubMenu, MF_STRING, ID_DEVICE_MEM, L"&Acesso à memoria");
+	AppendMenuW(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenuW(hSubMenu, MF_STRING, ID_DEVICE_GRAPHIC, L"&Gráficos");
+	AppendMenuW(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenuW(hSubMenu, MF_STRING, ID_DEVICE_RESET, L"&Reset");
+	AppendMenuW(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, L"&Dispositivo");
 
     hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, ID_OPTION_SETUP, _T("&Configuração"));
-	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-	AppendMenu(hSubMenu, MF_STRING, ID_SLOW, _T("Carga &lenta"));
-	AppendMenu(hSubMenu, MF_STRING, ID_FAST, _T("Carga &rápida"));
-	AppendMenu(hSubMenu, MF_STRING, ID_EQUALIZE, _T("&Equalização"));
-	AppendMenu(hSubMenu, MF_STRING, ID_FLOTING, _T("&Flutuação"));
-	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Opções"));
+	AppendMenuW(hSubMenu, MF_STRING, ID_OPTION_SETUP, L"&Configuração");
+	AppendMenuW(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenuW(hSubMenu, MF_STRING, ID_SLOW, L"Carga &lenta");
+	AppendMenuW(hSubMenu, MF_STRING, ID_FAST, L"Carga &rápida");
+	AppendMenuW(hSubMenu, MF_STRING, ID_EQUALIZE, L"&Equalização");
+	AppendMenuW(hSubMenu, MF_STRING, ID_FLOTING, L"&Flutuação");
+	AppendMenuW(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, L"&Opções");
 
     hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, ID_HELP_HLP, _T("&Ajuda"));
-	AppendMenu(hSubMenu,MF_SEPARATOR,0,0);
-	AppendMenu(hSubMenu, MF_STRING, ID_HELP_ABOUT, _T("&Acerca"));
-	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, _T("&Ajuda"));
+	AppendMenuW(hSubMenu, MF_STRING, ID_HELP_HLP, L"&Ajuda");
+	AppendMenuW(hSubMenu,MF_SEPARATOR,0,0);
+	AppendMenuW(hSubMenu, MF_STRING, ID_HELP_ABOUT, L"&Acerca");
+	AppendMenuW(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, L"&Ajuda");
 
 	SetMenu(hwnd, hMenu);
 }
@@ -612,7 +612,7 @@ DWORD App::GetAvailablePorts ( std::string* portList )
 	//HKEY_LOCAL_MACHINE\HARDWARE\DEVICEMAP\SERIALCOMM
 	HKEY hKey = NULL;
 
-	if ( RegOpenKey( HKEY_LOCAL_MACHINE, _T("Hardware\\DeviceMap\\SerialComm"), &hKey ) != ERROR_SUCCESS )
+	if ( RegOpenKeyW( HKEY_LOCAL_MACHINE, L"Hardware\\DeviceMap\\SerialComm", &hKey ) != ERROR_SUCCESS )
 	{
 		return 0;
 	}

@@ -124,7 +124,7 @@ protected:
       int DataIdx;
       void Translate(char *data, AD_Value Func,char sz, char *t, DWORD ID_VAL);
 public:
-      TabPage(CTabCtrl *Ctrl,char *name,UINT id, DLGPROC Proc,TabPage *Obj);
+      TabPage(CTabCtrl *Ctrl, char *name,UINT id, DLGPROC Proc,TabPage *Obj);
       virtual ~TabPage();
       char *GetName(){return name;}
       HWND GetHwnd(){return hWnd;}
