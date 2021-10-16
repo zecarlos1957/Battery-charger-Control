@@ -1395,17 +1395,17 @@ NO_FERR:
    bsf RS_ERROR
    movlw 0x4f
    movwf Err_Symbol
-   bsf RCSTA,CREN
+   bsf RCSTA,CREN     ;  enable continuous receive
 NO_OERR2
 
    movfw RCREG        ; Load data
    movwf INDF         ; save data to frame buffer
    incf RS_sz,F       ; update offset
    movfw RS_sz 
-   sublw 5            ; check if it is last byte
-   btfsc STATUS,Z
-   return             
-   btfss PIR1,RCIF
+   sublw 5            ; Frame Cmd as 5 bytes length
+   btfsc STATUS,Z     ; check if it is last byte
+   return             ; if so return
+   btfss PIR1,RCIF    ; else wait new byte received
    goto $-1
    goto UsartRX
 
