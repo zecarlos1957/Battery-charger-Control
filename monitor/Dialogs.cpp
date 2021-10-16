@@ -7,7 +7,7 @@
 #include "resource.h"
 #include "App.h"
 #include <commctrl.h>
-#include <tchar.h>
+#include <wchar.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +43,7 @@ void CMonitorPage::Populate()
         Store dataSize and Addr to read from device memory space
         Must terminate with 0 
     */
-    char addr[] = {6, 0x60, 0x1, 0x42, 0};
+    char addr[] = {6, 0x60, 0x01, 0x41, 0x1, 0x42, 0};
 
     sprintf(name, "%c%c%c %d.%d.%d", app->GetDeviceName()[0],
                                    app->GetDeviceName()[1],
@@ -63,14 +63,19 @@ void CMonitorPage::Populate()
 
 void CMonitorPage::Monitor(char *data)
 {
+    WCHAR *stat[] = {L"Carga Lenta", L"Carga Rápida", L"Finalizar", L"Carga Completa"};
       Translate(data+DataIdx,AD_INtoVolts,2,"V",ID_UIN);
       Translate(data+DataIdx+2,ADtoVolts,2,"V",ID_UOUT);
       Translate(data+DataIdx+4,ADtoAmps,2,"A",ID_IOUT);
-      Translate(data+DataIdx+6,ADtoTemp,1,"ºC",ID_TEMP);
-  /*     for(int i=0;i<6;i++)
-          printf("0x%x ",data[DataIdx+i]&0xff);
-       printf("\n");
-*/
+      Translate(data+DataIdx+7,ADtoTemp,1,"ºC",ID_TEMP);
+
+      WCHAR *str;
+      int i = (int)(data[DataIdx+6]&0xff)-1;
+      if (i < 4)
+          str = stat[i];
+      else str = L"Invalid";
+      SendDlgItemMessageW(hWnd, ID_STATUS, WM_SETTEXT, 0, (LPARAM)str);
+
 }
 
 LRESULT  CMonitorPage::OnNotify(WPARAM wParam,LPARAM lParam)

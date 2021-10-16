@@ -169,6 +169,7 @@ App::~App()
     {
         Link->Rts(RTS_CONTROL_DISABLE);
         Link->Dtr(DTR_CONTROL_DISABLE);
+        while(Link->Dtr());
         delete Link;
     }
     delete TabCtrl;
@@ -201,7 +202,13 @@ LRESULT App::OnDeviceChange(WPARAM wParam,LPARAM lParam)
 				pDevPort = (PDEV_BROADCAST_PORT)pHdr;
 				if ( DBT_DEVICEARRIVAL == wParam )
 				{
-				    if(Link) delete Link;
+				    if(Link)
+                    {
+                         Link->Rts(RTS_CONTROL_DISABLE);
+                         Link->Dtr(DTR_CONTROL_DISABLE);
+                         while(Link->Dtr());
+                         delete Link;
+                    }
 	//			    printf("BT_DEVICEARRIVAL DBT_DEVTYP_PORT\n");
 
 				    string pname(pDevPort->dbcp_name);
@@ -389,8 +396,8 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 
               TabCtrl->Populate();
 
-              char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
-  //            SendMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
+ //             char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
+ //             SendMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
 
               PostMessage(hwnd,EV_APP_INIT,0,0);
 
@@ -701,6 +708,9 @@ short VoltsToPWM(double Rms, short Uin)
 
    return pwm;
 }
+
+
+
 VOID CALLBACK  OnMonitor( HWND hwnd, UINT uMsg,	 UINT idEvent, DWORD dwTime  )
 {
 
