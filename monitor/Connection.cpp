@@ -29,8 +29,6 @@ Connection::Connection(HWND hwnd, std::string &port):Win32Port(port, CBR_9600, N
 
 Connection::~Connection()
 {
-    Dtr(DTR_CONTROL_DISABLE);
- //   SetCommMask(m_hPort,0);
 }
 
 BOOL Connection::SendCommand(char *comd)
@@ -63,9 +61,9 @@ void Connection::CtsNotify( bool status )
 
     printf("%s\n",status==false?"CTS_CONTROL_ENABLE":"CTS_CONTROL_DISABLE");
 
-    if(status == false || (FrameData[1]&0x10) == 0) return;
+    if(status == true || (FrameData[1]&0x10) == 0) return;
 
-    /// if (CTS is disable(true) and cmd==WRITE_MEM(0x01)) send data now.
+    /// if (CTS is enable and cmd==WRITE_MEM(0x01)) send data now.
 
     error=write_buffer(&FrameData[5],FrameData[3]);
     if(error != RS232_SUCCESS)
@@ -87,7 +85,7 @@ void Connection::TxNotify( )
     if(!IsConnected() )
          return;
 
-    if(!Cts()) /// Just print out when output a Fame_Cmd
+    if(Cts()) /// Just print out when output a Fame_Cmd
         printf(" Frame_Cmd: 0x%x 0x%x 0x%x 0x%x \n", FrameData[0]&0xff, FrameData[1]&0xff, FrameData[2]&0xff, FrameData[3]&0xff  );
 
 }

@@ -71,22 +71,22 @@ BOOL CALLBACK MainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
              break;
   //      case WM_TIMER:
   //           app->OnTimer();
-             return 0;
+  //           return 0;
 
         case EV_APP_INIT:
              app->OnInit(wParam, lParam);
              break;
 
          case EV_DEVICE_MSG:
-             if(app)app->OnDevMsg(wParam, lParam);
+             app->OnDevMsg(wParam, lParam);
              break;
 
          case EV_DATA_REQUEST:
-             if(app)app->OnDataRequest(wParam, lParam);
+             app->OnDataRequest(wParam, lParam);
              break;
 
          case WM_DEVICECHANGE:
-             if(app) app->OnDeviceChange(wParam, lParam);
+             app->OnDeviceChange(wParam, lParam);
              return TRUE;
 
         case WM_CLOSE:
@@ -165,7 +165,12 @@ App::App(HWND hwnd):hwnd(hwnd),
 
 App::~App()
 {
-    if(Link)delete Link;
+    if(Link)
+    {
+        Link->Rts(RTS_CONTROL_DISABLE);
+        Link->Dtr(DTR_CONTROL_DISABLE);
+        delete Link;
+    }
     delete TabCtrl;
     UnregisterDeviceNotification(hDevNotify);
 
@@ -244,18 +249,16 @@ LRESULT App::OnCommand(WPARAM wParam,LPARAM lParam)
      switch(LOWORD(wParam))
     {
            case ID_DEVICE_CHARGE_ON:
-             {
-                char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
-               PostMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
+           {
                 char flags =(~AFlags)&0x04;       /// bit 2  0 -> CHARGE_OFF  1 -> CHARGE_ON
                 flags = flags |(AFlags&0xfb);
 
-               frame=Link->BuildCmd(WRITE_MEM,RAM,0x45,1);
+                char *frame=Link->BuildCmd(WRITE_MEM,RAM,0x45,1);
                 Link->SendCommand(frame);
                 Link->SendData(1,&flags);
-printf("SetFlag %x ",(flags%0x04));
+printf("SetFlag %x \n",(flags%0x04));
 
-               if((flags&0x04)== 0)
+                if((flags&0x04)== 0)
                 {
                     char data;    /// clear CCPR1L
 
@@ -386,6 +389,9 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
 
               TabCtrl->Populate();
 
+              char *frame=Link->BuildCmd(READ_MEM,RAM,0x45,1);
+  //            SendMessage(hwnd,EV_DATA_REQUEST,0,(LPARAM)frame);
+
               PostMessage(hwnd,EV_APP_INIT,0,0);
 
               return 1;
@@ -393,6 +399,7 @@ LRESULT App::OnDevMsg(WPARAM wParam, LPARAM lParam)
          case 0x01450405:   /// GetFlags
          {
               AFlags = *(char*)lParam;
+printf("AFlags %x\n",AFlags);
             //        char flags =(~AFlags)&0x04;       /// bit 2  0 -> CHARGE_OFF  1 -> CHARGE_ON
             //        flags = flags |(AFlags&0xfb);
               return 1;
@@ -916,7 +923,6 @@ BOOL CALLBACK UserDataProc(HWND HwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                                            UDS_ALIGNRIGHT|UDS_WRAP|UDSSETBUDYINT,
                                            112, 60, 160, 12,HwndDlg,(HMENU)IDC_UPDOWN,hInst,0)
    */        {
-               SendDlgItemMessage(HwndDlg,IDC_MEM,CB_ADDSTRING,0,(LPARAM)"ROM");
                SendDlgItemMessage(HwndDlg,IDC_MEM,CB_ADDSTRING,0,(LPARAM)"RAM");
                SendDlgItemMessage(HwndDlg,IDC_MEM,CB_ADDSTRING,0,(LPARAM)"EEPROM");
                SendDlgItemMessage(HwndDlg,IDC_MEM,CB_SETCURSEL,1,0);

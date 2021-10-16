@@ -19,6 +19,7 @@
 #define IDB_SYSTEM      209
 #define IDB_PAINEL      210
 #define IDB_BATTERY     211
+#define ID_STATUS       212
 
 
 #define DLG_GRAPHICS    300

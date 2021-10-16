@@ -257,8 +257,6 @@ Win32Port::~Win32Port()
                                 TRUE,
                                 INFINITE );
 
-
-
         CloseHandle( m_hPort );
         m_hPort = INVALID_HANDLE_VALUE;
         CloseHandle( m_hKillInputThreadEvent );

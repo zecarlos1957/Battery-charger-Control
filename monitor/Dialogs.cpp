@@ -137,6 +137,7 @@ BOOL CALLBACK CMonitorPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         case WM_INITDIALOG:
              Obj=(CMonitorPage*)lParam;
              return FALSE;
+         
         case WM_PAINT:
              if(Obj)Obj->OnPaint(wParam,lParam);
              break;
@@ -234,6 +235,7 @@ void CGraphPage::SetData(short v, short i)
 
              MonGraph = (CGraphPage*)lParam;
              return TRUE;
+
         case WM_PAINT:
              MonGraph->OnPaint(wParam,lParam);
              break;
@@ -443,7 +445,8 @@ BOOL CALLBACK CBattPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
         case WM_INITDIALOG:
              Obj=(CBattPage*)lParam;
              return FALSE;
-        case WM_PAINT:
+
+       case WM_PAINT:
              Obj->OnPaint(wParam,lParam);
              return FALSE;
         case EV_DATA_REQUEST:
@@ -547,6 +550,7 @@ BOOL CALLBACK CPainelPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
         case WM_INITDIALOG:
              Obj=(CPainelPage*)lParam;
              return FALSE;
+
         case WM_PAINT:
              Obj->OnPaint(wParam,lParam);
              return FALSE;
@@ -630,6 +634,7 @@ BOOL CALLBACK CPortPage::DialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
         case WM_INITDIALOG:
              Obj=(CPortPage*)lParam;
              return FALSE;
+
         case WM_COMMAND:
              if(LOWORD(wParam) == ID_BTN_RTS )
              {
@@ -658,7 +663,7 @@ void CPortPage::OnRTSButton()
     if(rts)rts=0;
     else rts=1;
 
-    app->Link->Rts(rts);
+    app->Link->Dtr(rts);
 
 
 }

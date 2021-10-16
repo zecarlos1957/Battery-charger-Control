@@ -28,7 +28,6 @@
 
 #define BANK0:1    0x00  /// xxxx xxx0
 #define BANK2:3    0x01  /// xxxx xxx1
-#define ROM        0x00  /// xxxx 00xx
 #define RAM        0x04  /// xxxx 01xx
 #define EEPROM     0x08  /// xxxx 10xx
 #define READ_MEM   0x00  /// xxx0 xxxx
