@@ -4,6 +4,10 @@
 *.cof
 *.map
 *.sbs
+*.lst
+*.mcw
+*.mcs
+*.mcp
 *.txt
 *.dat
 *.db
