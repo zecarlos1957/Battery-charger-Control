@@ -438,7 +438,7 @@ MAIN
     clrf RS_len
     clrf RS_sz
     clrf RS_chkSum
-    clrf Requer
+    clrf Require
     clrf V_cal
     clrf I_cal
     clrf Err_Symbol
@@ -630,11 +630,11 @@ err:
 ;*************************************
 err_ok
 
-   btfsc CHARGE_ON
-   goto teste_ok
-   movfw Charge_Triger+1
-   subwf U_out+1,W
-teste_ok
+;   btfsc CHARGE_ON
+;   goto teste_ok
+;   movfw Charge_Triger+1
+;   subwf U_out+1,W
+;teste_ok
 
 
    movlw SLOW_CHARGE
@@ -658,6 +658,7 @@ teste_ok
    goto do_float
 
 ;************************
+
 chk_slow:
   ; if(U_out < V_off) goto do_slow
    movfw U_out+1
@@ -672,17 +673,17 @@ cmp_Voff
    movlw SLOW_CHARGE
    movwf charge_status
 do_slow:
-   ; I Requer = I_tric - AD_Iout
+   ; I Require = I_tric - AD_Iout
    movf I_tric,W
-   movwf Requer
+   movwf Require
    movf I_tric+1,W
-   movwf Requer+1
+   movwf Require+1
    movf I_out ,W
-   subwf Requer,F
+   subwf Require,F
    btfss STATUS,C
-   decf Requer+1,F
+   decf Require+1,F
    movf I_out+1,W
-   subwf Requer+1,F
+   subwf Require+1,F
    ; if (  U_out > V_off ) set FAST
    movfw V_off+1
    subwf U_out+1,W
@@ -715,17 +716,17 @@ cmp_Vfloat
    movlw FAST_CHARGE
    movwf charge_status
 do_fast:
-   ; I Requer = I_blk - AD_Iout
+   ; I Require = I_blk - AD_Iout
    movf I_blk,W
-   movwf Requer
+   movwf Require
    movf I_blk+1,W
-   movwf Requer+1
+   movwf Require+1
    movf I_out ,W
-   subwf Requer,F
+   subwf Require,F
    btfss STATUS,C
-   decf Requer+1,F
+   decf Require+1,F
    movf I_out+1,W
-   subwf Requer+1,F
+   subwf Require+1,F
    ; if (U_out >= V_oct-1) OVER_CHARGE
    movfw V_oct+1
    subwf U_out+1,W
@@ -758,8 +759,8 @@ cmp_over
    goto Control_done
 
    movlw 0xff
-   movwf Requer
-   movwf Requer+1
+   movwf Require
+   movwf Require+1
 
    ; if I_oct >= I_out set FLOAT
    movfw I_out+1
@@ -790,21 +791,21 @@ cmp_float
    goto Control_done
 
    movlw 0xff        
-   movwf Requer
-   movwf Requer+1
+   movwf Require
+   movwf Require+1
    goto do_it
 
 incReq
    movlw 1
-   movwf Requer
-   clrf Requer+1
+   movwf Require
+   clrf Require+1
 
 
 ;*********************************************************+
 
 do_it:
-   movf Requer,W
-   iorwf Requer+1,W
+   movf Require,W
+   iorwf Require+1,W
    btfsc STATUS,Z
    goto Control_done
 
@@ -815,9 +816,9 @@ do_it:
 
 
 
-   btfss Requer+1,7
+   btfss Require+1,7
    call I_goUp
-   btfsc Requer+1,7
+   btfsc Require+1,7
    call I_goDown
 
 
@@ -825,8 +826,8 @@ do_it:
 
 Control_done
 
-   clrf Requer
-   clrf Requer+1
+   clrf Require
+   clrf Require+1
 
 ;****************************************
 
@@ -1238,15 +1239,15 @@ I_UpOK
    clrf Old+1
    goto in
 WaitRizing:
-   ; Requer = Requer - Old
-    movfw Requer
+   ; Require = Require - Old
+    movfw Require
     subwf Old,W
     btfss STATUS,C
-    decf Requer+1,F
-    movwf Requer
-    movfw Requer+1
+    decf Require+1,F
+    movwf Require
+    movfw Require+1
     subwf Old+1,W
-    movwf Requer+1
+    movwf Require+1
 in
    movfw I_out
    movwf Old
@@ -1273,8 +1274,8 @@ in
    goto WaitRizing
 
 ;************
-    movfw Requer
-   iorwf Requer+1,W
+    movfw Require
+   iorwf Require+1,W
    btfss STATUS,C
 
    goto I_goUp
@@ -1311,15 +1312,15 @@ I_goDown
    clrf Old+1
    goto in1
 WaitDown
-    ; Requer = Requer + Old
+    ; Require = Require + Old
     movfw Old
-    addwf Requer,F
+    addwf Require,F
     btfsc STATUS,C
-    incf Requer+1,F
+    incf Require+1,F
     movfw Old+1
-    addwf Requer+1,F
+    addwf Require+1,F
 
-    btfss Requer+1,7
+    btfss Require+1,7
     goto I_Ddone
 in1
    movfw I_out
@@ -1348,7 +1349,7 @@ in1
    goto WaitDown
 
 
-   movfw Requer+1
+   movfw Require+1
    btfss STATUS,Z
    goto I_goDown
 
@@ -2983,7 +2984,7 @@ V_batt        equ 0x4a
 
 t3            equ 0x4c
 ReadCnt       equ 0x4d
-Requer        equ 0x4e  ; Store difference bettwen ( V_xx - U_out)
+Require        equ 0x4e  ; Store difference bettwen ( V_xx - U_out)
 
 
 V_off         equ 0x50
