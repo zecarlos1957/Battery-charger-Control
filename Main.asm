@@ -135,7 +135,7 @@ R_CNT   equ 0x0a
 
 
 
-
+    extern Update_PWM
     extern FXM1616U
  
   
@@ -563,7 +563,7 @@ L4
 
 
 
-    bsf CHARGE_ON
+;    bsf CHARGE_ON
 
 
 
@@ -618,11 +618,14 @@ err:
 ;*************************************
 err_ok
 
-;   btfsc CHARGE_ON
-;   goto teste_ok
-;   movfw Charge_Triger+1
-;   subwf U_out+1,W
-;teste_ok
+   btfsc CHARGE_ON
+   goto do_it
+   bsf CHARGE_ON
+   pagesel Update_PWM
+   call Update_PWM
+   pagesel MAIN
+   goto do_it
+teste_ok
 
 
    movlw SLOW_CHARGE
