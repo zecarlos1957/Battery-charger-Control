@@ -599,18 +599,6 @@ Loop
     movlw b'11010000'   ; AN2 I_out
     call refresh
 
-
-;****************************************
-
-   ; Calculates the voltage drop in R ( U1-U2)
- ;  movfw I_out
- ;  subwf U_out,f
- ;  btfss STATUS,C
- ;  decf U_out+1
- ;  movfw I_out+1
- ;  subwf U_out+1,f
-
-
 ;***********************************
 
    ; if(U_out < 8.4V) set NO_BATTERY
