@@ -137,9 +137,6 @@ R_CNT   equ 0x0a
 
     extern Update_PWM
     extern FXM1616U
- 
-  
-
     extern SetupConfig
 
  
@@ -185,8 +182,6 @@ R_CNT   equ 0x0a
    #define temp   0xd1
    #define cnt    0xd2
 
-    extern b2bcd
-    extern bcd2a
 
  ;*******************************
 
@@ -439,8 +434,11 @@ MAIN
     clrf RS_sz
     clrf RS_chkSum
     clrf Require
+    clrf Require+1
     clrf V_cal
+    clrf V_cal+1
     clrf I_cal
+    clrf I_cal+1
     clrf Err_Symbol
 
     movlw 0x0e
@@ -2860,13 +2858,6 @@ calc_I160
   return
 
 ;******************************************************
-
-
-
-;******************************************************
-
-
-;*********************************************************************************************
 
 
 read_ad
