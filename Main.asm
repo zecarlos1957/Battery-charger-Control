@@ -846,7 +846,7 @@ RS_DONE
      bsf INTCON,GIE
 continue:
 
-     call RBInt_isr
+     call UserKey
      goto Loop
 
 
@@ -1674,7 +1674,7 @@ PressOK
 
 ;**********************************************************
 
-RBInt_isr
+UserKey
 ;    banksel INTCON
 ;    bcf INTCON, RBIF
     btfss PORTB,5
