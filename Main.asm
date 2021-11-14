@@ -67,10 +67,14 @@
 ;   Sobretens�o (sobrecarga  > 2.70                   -> 16.2v        *
 ;                                                                     *
 ;   Equalização (recarga)    10% da capacidade   I_blk                *
-;   Flutuaçao                 1%  "       "      I_tric               *
+;   Flutuaçao                 1%  "       "       I_tric               *
 ;   Retenção                 I_blk/5             I_oct                *
 ;                                                                     *
-;                                                                     *
+;       *********Estado da carga******************
+;
+;        100%   12.70v -> 12.90v                                                            *
+;         50%   12.18v
+;          0%   11.70v
 ;                                                                     *
 ;           *** Compensação da variação da temperatura ***            *
 ;                                                                     *
@@ -433,8 +437,8 @@ MAIN
     clrf RS_len
     clrf RS_sz
     clrf RS_chkSum
-    clrf Require
-    clrf Require+1
+    clrf duty
+    clrf duty+1
     clrf V_cal
     clrf V_cal+1
     clrf I_cal
@@ -561,7 +565,7 @@ L4
 
 
 
-;    bsf CHARGE_ON
+    bsf CHARGE_ON
 
 
 
@@ -616,13 +620,12 @@ err:
 ;*************************************
 err_ok
 
-   btfsc CHARGE_ON
-   goto do_it
-   bsf CHARGE_ON
-   pagesel Update_PWM
-   call Update_PWM
-   pagesel MAIN
-   goto do_it
+;   btfsc CHARGE_ON
+;   goto teste_ok
+;   bsf CHARGE_ON
+;   pagesel Update_PWM
+;   call Update_PWM
+;   pagesel MAIN
 teste_ok
 
 
@@ -649,7 +652,7 @@ teste_ok
 ;************************
 
 chk_slow:
-  ; if(U_out < V_off) goto do_slow
+  ; if(U_out < V_off (10.5v)) goto do_slow
    movfw U_out+1
    subwf V_off+1,W
    bnz cmp_Voff
@@ -662,17 +665,17 @@ cmp_Voff
    movlw SLOW_CHARGE
    movwf charge_status
 do_slow:
-   ; I Require = I_tric - AD_Iout
+   ; I duty = I_tric - AD_Iout
    movf I_tric,W
-   movwf Require
+   movwf duty
    movf I_tric+1,W
-   movwf Require+1
+   movwf duty+1
    movf I_out ,W
-   subwf Require,F
+   subwf duty,F
    btfss STATUS,C
-   decf Require+1,F
+   decf duty+1,F
    movf I_out+1,W
-   subwf Require+1,F
+   subwf duty+1,F
    ; if (  U_out > V_off ) set FAST
    movfw V_off+1
    subwf U_out+1,W
@@ -691,7 +694,7 @@ cmp_Voff2
 ;********************************
 
 chk_fast:
-  ; if(Uout < V_float) goto do_fast
+  ; if(Uout < V_float (13.2v)) goto do_fast
 
    movfw U_out+1
    subwf V_float+1,W
@@ -705,17 +708,17 @@ cmp_Vfloat
    movlw FAST_CHARGE
    movwf charge_status
 do_fast:
-   ; I Require = I_blk - AD_Iout
+   ; I duty = I_blk - AD_Iout
    movf I_blk,W
-   movwf Require
+   movwf duty
    movf I_blk+1,W
-   movwf Require+1
+   movwf duty+1
    movf I_out ,W
-   subwf Require,F
+   subwf duty,F
    btfss STATUS,C
-   decf Require+1,F
+   decf duty+1,F
    movf I_out+1,W
-   subwf Require+1,F
+   subwf duty+1,F
    ; if (U_out >= V_oct-1) OVER_CHARGE
    movfw V_oct+1
    subwf U_out+1,W
@@ -726,43 +729,43 @@ do_fast:
 cmp_Voct2
    btfss STATUS,C
    goto do_it
-;   movlw OVER_CHARGE
-;   movwf charge_status
-;   goto do_it
+   movlw FLOAT_CHARGE ;OVER_CHARGE
+   movwf charge_status
+   goto do_it
 
 ;**********************************
 chk_over:
 
-   movlw OVER_CHARGE
-   movwf charge_status
-do_over
-   ; if (U_out >= V_oct-1) Req--
-   movfw V_oct+1
-   subwf U_out+1,W
-   bnz cmp_over
-   movlw 1
-   subwf V_oct,W
-   subwf U_out,W
-cmp_over
-   btfss STATUS,C
-   goto Control_done
+;   movlw OVER_CHARGE
+;   movwf charge_status
+;do_over
+;   ; if (U_out >= V_oct-1) Req--
+;   movfw V_oct+1
+;   subwf U_out+1,W
+;   bnz cmp_over
+;   movlw 1
+;   subwf V_oct,W
+;   subwf U_out,W
+;cmp_over
+;   btfss STATUS,C
+;   goto Control_done
 
-   movlw 0xff
-   movwf Require
-   movwf Require+1
+;   movlw 0xff
+;   movwf duty
+;   movwf duty+1
 
    ; if I_oct >= I_out set FLOAT
-   movfw I_out+1
-   subwf I_oct+1,W
-   bnz cmp_oct
-   movfw I_out
-   subwf I_oct,W
-cmp_oct
-   btfss STATUS,C
-   goto do_it
-   movlw FLOAT_CHARGE
-   movwf charge_status
-   goto do_it
+;   movfw I_out+1
+;   subwf I_oct+1,W
+;   bnz cmp_oct
+;   movfw I_out
+;   subwf I_oct,W
+;cmp_oct
+;   btfss STATUS,C
+;   goto do_it
+;   movlw FLOAT_CHARGE
+;   movwf charge_status
+;   goto do_it
 
 
 chk_float:
@@ -780,21 +783,21 @@ cmp_float
    goto Control_done
 
    movlw 0xff        
-   movwf Require
-   movwf Require+1
+   movwf duty
+   movwf duty+1
    goto do_it
 
 incReq
    movlw 1
-   movwf Require
-   clrf Require+1
+   movwf duty
+   clrf duty+1
 
 
 ;*********************************************************+
 
 do_it:
-   movf Require,W
-   iorwf Require+1,W
+   movf duty,W
+   iorwf duty+1,W
    btfsc STATUS,Z
    goto Control_done
 
@@ -805,9 +808,9 @@ do_it:
 
 
 
-   btfss Require+1,7
+   btfss duty+1,7
    call I_goUp
-   btfsc Require+1,7
+   btfsc duty+1,7
    call I_goDown
 
 
@@ -815,8 +818,8 @@ do_it:
 
 Control_done
 
-   clrf Require
-   clrf Require+1
+   clrf duty
+   clrf duty+1
 
 ;****************************************
 
@@ -1228,15 +1231,15 @@ I_UpOK
    clrf Old+1
    goto in
 WaitRizing:
-   ; Require = Require - Old
-    movfw Require
+   ; duty = duty - Old
+    movfw duty
     subwf Old,W
     btfss STATUS,C
-    decf Require+1,F
-    movwf Require
-    movfw Require+1
+    decf duty+1,F
+    movwf duty
+    movfw duty+1
     subwf Old+1,W
-    movwf Require+1
+    movwf duty+1
 in
    movfw I_out
    movwf Old
@@ -1263,8 +1266,8 @@ in
    goto WaitRizing
 
 ;************
-    movfw Require
-   iorwf Require+1,W
+    movfw duty
+   iorwf duty+1,W
    btfss STATUS,C
 
    goto I_goUp
@@ -1301,15 +1304,15 @@ I_goDown
    clrf Old+1
    goto in1
 WaitDown
-    ; Require = Require + Old
+    ; duty = duty + Old
     movfw Old
-    addwf Require,F
+    addwf duty,F
     btfsc STATUS,C
-    incf Require+1,F
+    incf duty+1,F
     movfw Old+1
-    addwf Require+1,F
+    addwf duty+1,F
 
-    btfss Require+1,7
+    btfss duty+1,7
     goto I_Ddone
 in1
    movfw I_out
@@ -1338,7 +1341,7 @@ in1
    goto WaitDown
 
 
-   movfw Require+1
+   movfw duty+1
    btfss STATUS,Z
    goto I_goDown
 
@@ -1675,8 +1678,6 @@ PressOK
 ;**********************************************************
 
 UserKey
-;    banksel INTCON
-;    bcf INTCON, RBIF
     btfss PORTB,5
     call PressOK
     btfsc PORTB,7   ; UP
@@ -2966,7 +2967,7 @@ V_batt        equ 0x4a
 
 t3            equ 0x4c
 ReadCnt       equ 0x4d
-Require        equ 0x4e  ; Store difference bettwen ( V_xx - U_out)
+duty        equ 0x4e  ; Store difference bettwen ( V_xx - U_out)
 
 
 V_off         equ 0x50

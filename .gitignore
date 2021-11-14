@@ -14,5 +14,5 @@
 *.cbp
 *.depend
 *.layout
-monitor/bin
-monitor/obj
+bin
+obj

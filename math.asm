@@ -1357,42 +1357,44 @@ ADtoVolts
 ;;*************************************************************************************************************
    
 ;**************************************************
-; input Require set to value to add  to current U_out
+
+; input: Require set to value to add  to current U_out
+
 Update_PWM
 
-   ; Convert requered ADU to volts 
+   ; Convert requered AD to volts 
   
-   movfw Require
-   banksel ACCaLO
-   movwf ACCaLO
-   banksel Require
-   movfw Require+1
-   banksel ACCaLO
-   movwf ACCaHI 
+;   movfw Require
+;   banksel ACCaLO
+;   movwf ACCaLO
+;   banksel Require
+;   movfw Require+1
+;   banksel ACCaLO
+;   movwf ACCaHI 
 
-   call ADtoVolts ; res AARGB0:1:2:3:4
+;   call ADtoVolts ; res AARGB0:1:2:3:4
  
    
    ;save result
-   movfw AARGB4
-   movwf BINdata
-   movfw AARGB3
-   movwf BINdata+1
-   movfw AARGB2
-   movwf BINdata+2
-   movfw AARGB1
-   movwf BINdata+3
+;   movfw AARGB4
+;   movwf BINdata
+;   movfw AARGB3
+;   movwf BINdata+1
+;   movfw AARGB2
+;   movwf BINdata+2
+;   movfw AARGB1
+;   movwf BINdata+3
  
 
  
 ; Add Uout to Require
-   banksel U_out
-   movfw U_out
-   addwf Require,F
-   btfsc STATUS,C
-   incf Require+1,F
-   movfw U_out+1
-   addwf Require+1,F
+;   banksel U_out
+;   movfw U_out
+;   addwf Require,F
+;   btfsc STATUS,C
+;   incf Require+1,F
+;   movfw U_out+1
+;   addwf Require+1,F
 
 
    
