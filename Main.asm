@@ -723,50 +723,53 @@ do_fast:
    movfw V_oct+1
    subwf U_out+1,W
    bnz cmp_Voct2
-   movlw 1
-   subwf V_oct,W
+   movfw V_oct
    subwf U_out,W
 cmp_Voct2
    btfss STATUS,C
    goto do_it
-   movlw FLOAT_CHARGE ;OVER_CHARGE
+   btfsc STATUS,Z
+   goto do_it
+   movlw OVER_CHARGE
    movwf charge_status
    goto do_it
 
 ;**********************************
+
 chk_over:
 
-;   movlw OVER_CHARGE
-;   movwf charge_status
-;do_over
-;   ; if (U_out >= V_oct-1) Req--
-;   movfw V_oct+1
-;   subwf U_out+1,W
-;   bnz cmp_over
-;   movlw 1
-;   subwf V_oct,W
-;   subwf U_out,W
-;cmp_over
-;   btfss STATUS,C
-;   goto Control_done
+   movlw OVER_CHARGE
+   movwf charge_status
+do_over
+   ; if (U_out >= V_oct-1) duty--
+   movfw V_oct+1
+   subwf U_out+1,W
+   bnz cmp_over
+   movlw 1
+   subwf V_oct,W
+   subwf U_out,W
+cmp_over
+   btfss STATUS,C
+   goto Control_done
 
-;   movlw 0xff
-;   movwf duty
-;   movwf duty+1
+   movlw 0xff
+   movwf duty
+   movwf duty+1
 
    ; if I_oct >= I_out set FLOAT
-;   movfw I_out+1
-;   subwf I_oct+1,W
-;   bnz cmp_oct
-;   movfw I_out
-;   subwf I_oct,W
-;cmp_oct
-;   btfss STATUS,C
-;   goto do_it
-;   movlw FLOAT_CHARGE
-;   movwf charge_status
-;   goto do_it
+   movfw I_out+1
+   subwf I_oct+1,W
+   bnz cmp_oct
+   movfw I_out
+   subwf I_oct,W
+cmp_oct
+   btfss STATUS,C
+   goto do_it
+   movlw FLOAT_CHARGE
+   movwf charge_status
+   goto do_it
 
+;**************************************************
 
 chk_float:
 do_float:
@@ -778,7 +781,7 @@ do_float:
    subwf U_out,W
 cmp_float
    btfss STATUS,C
-   goto incReq
+   goto incRequire
    btfsc STATUS,Z
    goto Control_done
 
@@ -787,7 +790,7 @@ cmp_float
    movwf duty+1
    goto do_it
 
-incReq
+incRequire
    movlw 1
    movwf duty
    clrf duty+1
