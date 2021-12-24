@@ -2,4 +2,4 @@
 Charge monitoring and control for lead acid battery charger
 
 ![Screenshot](Monitor.png)
-![Screenshot](Charger.jpg)
+![Screenshot](Charging.jpg)
