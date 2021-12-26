@@ -1233,7 +1233,7 @@ I_UpOK
    clrf Old
    clrf Old+1
    goto in
-WaitRizing:
+WaitRising:
    ; duty = duty - Old
     movfw duty
     subwf Old,W
@@ -1266,7 +1266,7 @@ in
    movfw Old
    iorwf Old+1,W
    btfss STATUS,Z
-   goto WaitRizing
+   goto WaitRising
 
 ;************
     movfw duty
@@ -1306,7 +1306,7 @@ I_goDown
    clrf Old
    clrf Old+1
    goto in1
-WaitDown
+WaitDescent
     ; duty = duty + Old
     movfw Old
     addwf duty,F
@@ -1341,7 +1341,7 @@ in1
    movfw Old
    iorwf Old+1,W
    btfss STATUS,Z
-   goto WaitDown
+   goto WaitDescent
 
 
    movfw duty+1
