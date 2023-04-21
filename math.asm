@@ -1542,9 +1542,9 @@ Calc_PWM
    ; /=10000   
   
     movlw 0x10
-    movwf BARGB1
+    movwf BARGB1  
      movlw 0x27
-    movwf BARGB1
+    movwf BARGB0  
 
     call FXD2416U   ; output  AARGB0:1:2
 
